@@ -52,9 +52,11 @@ class MultiPartPostTest extends IntegrationTest {
 
   @Test
   void shouldStreamLargeFiles() throws IOException {
+    var size = DataSize.megabytes(10);
     config.route("/post", ctx -> {
       try {
-        Assertions.assertArrayEquals("00000".getBytes(), Files.readAllBytes(Paths.get(ctx.getParameter("file", ParameterSource.FORM).orElseThrow())));
+        long bytes = Files.size(Paths.get(ctx.getParameter("file", ParameterSource.FORM).orElseThrow()));
+        Assertions.assertEquals(size.toBytes(), bytes);
       } catch (IOException e) {
         throw new IllegalStateException(e);
       }
@@ -68,7 +70,7 @@ class MultiPartPostTest extends IntegrationTest {
 
     HttpEntity entity = MultipartEntityBuilder
       .create()
-      .addBinaryBody("file", new RandomInputStream(DataSize.bytes(6).toBytes()))
+      .addBinaryBody("file", new RandomInputStream(size.toBytes()))
       .addTextBody("hello", "world")
       .build();
 

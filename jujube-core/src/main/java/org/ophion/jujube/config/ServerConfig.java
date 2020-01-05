@@ -46,7 +46,7 @@ public class ServerConfig {
     this.exceptionCallback = new JujubeExceptionCallback();
 
     try {
-      var certificate = new SelfSignedCertificate();
+      var certificate = new SelfSignedCertificate("jujube.local");
       var password = "password".toCharArray();
 
       KeyStore ks = KeyStore.getInstance("PKCS12");
@@ -58,7 +58,7 @@ public class ServerConfig {
         .loadKeyMaterial(ks, password)
         .build();
 
-      this.tlsStrategy = new H2ServerTlsStrategy(tlsContext, new LazySecurePortStrategy(() -> new int[]{listenPort}));
+      this.tlsStrategy = new H2ServerTlsStrategy(tlsContext, new LazySecurePortStrategy(() -> new int[]{this.listenPort}));
     } catch (Exception e) {
       throw new IllegalArgumentException(e);
     }

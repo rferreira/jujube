@@ -54,9 +54,9 @@ class MultipartChunkDecoderTest {
 
     // using some small chunks:
     while (true) {
-      byte[] chunk = new byte[64];
+      byte[] chunk = new byte[8192];
       int bytesRead = ins.read(chunk);
-      decoder.decode(chunk, bytesRead == -1);
+      decoder.decode(chunk, 0, Math.max(bytesRead, 0), bytesRead == -1);
       if (bytesRead == -1) {
         break;
       }
@@ -103,7 +103,7 @@ class MultipartChunkDecoderTest {
     while (true) {
       byte[] chunk = new byte[64];
       int bytesRead = ins.read(chunk);
-      decoder.decode(chunk, bytesRead == -1);
+      decoder.decode(chunk, 0, Math.max(bytesRead, 0), bytesRead == -1);
       if (bytesRead == -1) {
         break;
       }
@@ -158,11 +158,11 @@ class MultipartChunkDecoderTest {
       }
     });
 
-    // really small chunks:
+    // small chunks:
     while (true) {
-      byte[] chunk = new byte[64];
+      byte[] chunk = new byte[8192];
       int bytesRead = ins.read(chunk);
-      decoder.decode(chunk, bytesRead == -1);
+      decoder.decode(chunk, 0, Math.max(bytesRead, 0), bytesRead == -1);
       if (bytesRead == -1) {
         break;
       }

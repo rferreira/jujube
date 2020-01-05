@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Zero copy, streaming multipart form post decoder. RFC-7578 compliant.
+ * A near zero copy, streaming, multipart form post decoder. RFC-7578 compliant.
  * Features:
  * - Chunk size independence
  * - Fixed memory usage (configurable and zero-copied)
@@ -71,27 +71,22 @@ public class MultipartChunkDecoder {
   }
 
   /**
-   * Accumulate chunks into a minimal size (that way the chunk size doesn't really matter)
+   * Accumulate chunks into a minimal size (that way the chunk size doesn't really matter) and
    * once the buffer is of a certain size it processes it compacting said buffer when needed.
    * This is thread safe - believe it or not.
    *
    * @param chunk       byte chunk of any size to process
    * @param isLastChunk whether this chunk represents the last chunk in this byte sequence or not.
    */
-  public void decode(byte[] chunk, boolean isLastChunk) throws IOException {
+  public void decode(byte[] chunk, int offset, int length, boolean isLastChunk) throws IOException {
 
     synchronized (lock) {
       if (chunk.length > buffer.capacity()) {
         throw new IllegalStateException("chunk size is greater than the internal buffer size, please try increasing the buffer size");
       }
 
-      if (isLastChunk && chunk.length == 0) {
-        LOG.debug("empty last chunk received, forcing processing");
-        processBuffer(buffer.flip());
-        return;
-      }
+      var wrappedChunk = ByteBuffer.wrap(chunk, offset, length);
 
-      var wrappedChunk = ByteBuffer.wrap(chunk);
       while (wrappedChunk.hasRemaining()) {
         if (buffer.remaining() >= wrappedChunk.remaining()) {
           buffer.put(wrappedChunk);
@@ -101,10 +96,14 @@ public class MultipartChunkDecoder {
           buffer.put(wrappedChunk.slice().limit(availableCapacity));
           wrappedChunk.position(wrappedChunk.position() + availableCapacity);
         }
-        if (buffer.remaining() == 0 || isLastChunk) {
+        if (buffer.remaining() == 0) {
           processBuffer(buffer.flip());
           buffer.compact();
         }
+      }
+
+      if (isLastChunk) {
+        processBuffer(buffer.flip());
       }
     }
   }
@@ -188,7 +187,7 @@ public class MultipartChunkDecoder {
         } else {
           if (currentPartMetadata.isText()) {
 
-            // if part does not have a charset, but we have an overwrite one, use it:
+            // if part does not have a charset, but we have a default one, use it:
             var charset = currentPartMetadata.getContentType().getCharset();
             if (charset == null) {
               if (charsetIfNoneProvided != null) {

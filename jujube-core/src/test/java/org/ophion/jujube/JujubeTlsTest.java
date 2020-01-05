@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class JujubeTlsTest extends IntegrationTest {
   @Test
-  void shouldDisableTls() throws IOException {
+  void shouldAllowUsersToDisable() throws IOException {
     AtomicInteger counter = new AtomicInteger();
     config.route("/hello", (ctx) -> {
       var response = new HttpResponse("w00t");

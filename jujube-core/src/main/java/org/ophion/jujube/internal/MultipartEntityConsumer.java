@@ -2,7 +2,6 @@ package org.ophion.jujube.internal;
 
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.nio.entity.AbstractBinAsyncEntityConsumer;
 import org.apache.hc.core5.util.Args;
 import org.ophion.jujube.config.JujubeConfig;
@@ -32,7 +31,7 @@ public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
   }
 
   @Override
-  protected void streamStart(ContentType contentType) throws HttpException, IOException {
+  protected void streamStart(ContentType contentType) throws IOException {
     try {
       this.contentType = contentType;
       var boundary = contentType.getParameter("boundary");
@@ -69,11 +68,7 @@ public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
 
   @Override
   protected void data(ByteBuffer src, boolean endOfStream) throws IOException {
-    try {
-      decoder.decode(src.array(), endOfStream);
-    } catch (Exception ex) {
-      LOG.error("oops", ex);
-    }
+    decoder.decode(src.array(), 0, src.limit(), endOfStream);
   }
 
   @Override

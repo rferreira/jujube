@@ -36,7 +36,6 @@ class IntegrationTest {
 
 
   IntegrationTest() {
-    // Allow TLSv1.2 protocol only
     try {
       final SSLContext sslContext = SSLContexts.custom()
         .loadTrustMaterial(TrustSelfSignedStrategy.INSTANCE)

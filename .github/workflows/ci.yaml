@@ -1,0 +1,17 @@
+name: Run tests
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ 'openjdk11', 'openjdk13' ]
+    name: Java ${{ matrix.java }} sample
+    steps:
+      - uses: actions/checkout@latest
+      - uses: joschi/setup-jdk@v1
+        with:
+          java-version: 'openjdk11'
+          architecture: 'x64'
+      - run: mvn clean package

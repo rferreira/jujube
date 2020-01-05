@@ -1,29 +1,21 @@
 package org.ophion.jujube;
 
 import org.apache.hc.core5.http.impl.bootstrap.HttpAsyncServer;
-import org.apache.hc.core5.http.nio.ssl.FixedPortStrategy;
-import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
 import org.apache.hc.core5.http2.impl.nio.bootstrap.H2ServerBootstrap;
-import org.apache.hc.core5.http2.ssl.H2ServerTlsStrategy;
 import org.apache.hc.core5.io.CloseMode;
 import org.apache.hc.core5.reactor.ListenerEndpoint;
-import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.hc.core5.util.TimeValue;
-import org.conscrypt.Conscrypt;
 import org.ophion.jujube.config.JujubeConfig;
 import org.ophion.jujube.internal.JujubeServerExchangeHandler;
 import org.ophion.jujube.internal.util.Durations;
 import org.ophion.jujube.internal.util.Loggers;
-import org.ophion.jujube.tls.SelfSignedCertificate;
 import org.slf4j.Logger;
 
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.KeyStore;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -79,9 +71,12 @@ public class Jujube {
       final Future<ListenerEndpoint> future = instance.listen(new InetSocketAddress(config.getServerConfig().getListenPort()));
       final ListenerEndpoint listenerEndpoint = future.get();
 
-      System.out.println(String.format("> HTTP server started (on %s) in %s with %d known routes - enjoy \uD83C\uDF89",
+      var isTlsEnabled = config.getServerConfig().getTlsStrategy() != null;
+      System.out.println(String.format("> HTTP server started (on %s) in %s with %d known routes and TLS %s, enjoy \uD83C\uDF89",
         listenerEndpoint.getAddress(),
-        Durations.humanize(Duration.between(startInstant, Instant.now())), config.routes().size()));
+        Durations.humanize(Duration.between(startInstant, Instant.now())), config.routes().size(),
+        isTlsEnabled ? "ON" : "OFF")
+      );
 
     } catch (InterruptedException | ExecutionException | URISyntaxException | IOException e) {
       throw new IllegalStateException(e);
