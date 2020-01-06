@@ -2,12 +2,12 @@ package org.ophion.jujube;
 
 import org.apache.hc.core5.annotation.Contract;
 import org.apache.hc.core5.annotation.ThreadingBehavior;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.*;
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.http.protocol.HttpCoreContext;
 import org.ophion.jujube.config.JujubeConfig;
 
+import javax.net.ssl.SSLSession;
 import java.util.Optional;
 
 @Contract(threading = ThreadingBehavior.UNSAFE)
@@ -43,5 +43,10 @@ public final class JujubeHttpContext extends HttpCoreContext {
 
   public Optional<ContentType> getEntityContentType() {
     return Optional.ofNullable(getAttribute(CONTENT_TYPE, ContentType.class));
+  }
+
+  @Override
+  public HttpResponse getResponse() {
+    throw new IllegalArgumentException("Response object cannot be retrieved");
   }
 }

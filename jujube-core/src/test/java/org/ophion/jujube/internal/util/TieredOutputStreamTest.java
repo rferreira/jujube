@@ -2,6 +2,7 @@ package org.ophion.jujube.internal.util;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.ophion.jujube.util.DataSize;
 
 import java.io.IOException;
 import java.util.stream.IntStream;

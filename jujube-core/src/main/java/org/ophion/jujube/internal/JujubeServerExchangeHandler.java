@@ -9,6 +9,7 @@ import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
 import org.apache.hc.core5.http.nio.entity.NoopEntityConsumer;
 import org.apache.hc.core5.http.nio.support.AbstractServerExchangeHandler;
 import org.apache.hc.core5.http.nio.support.AsyncResponseBuilder;
+import org.apache.hc.core5.http.nio.support.BasicRequestConsumer;
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.net.URLEncodedUtils;
 import org.ophion.jujube.JujubeHttpContext;
@@ -45,17 +46,18 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
   @Override
   protected AsyncRequestConsumer<Message<HttpRequest, HttpEntity>> supplyConsumer(HttpRequest request, EntityDetails entityDetails, HttpContext context) throws HttpException {
     if (entityDetails == null) {
-      return new ErrorCapturingRequestConsumer(exceptionRef, new NoopEntityConsumer());
+      //noinspection unchecked
+      return new BasicRequestConsumer(new NoopEntityConsumer());
     }
 
     if (entityDetails.getContentType() != null) {
       var contentType = ContentType.parse(entityDetails.getContentType());
 
       if (contentType.isSameMimeType(ContentType.MULTIPART_FORM_DATA)) {
-        return new ErrorCapturingRequestConsumer<>(exceptionRef, new MultipartEntityConsumer(config));
+        return new BasicRequestConsumer<>(new MultipartEntityConsumer(config, exceptionRef));
       }
     }
-    return new ErrorCapturingRequestConsumer<>(exceptionRef, new SizeAwareEntityConsumer());
+    return new BasicRequestConsumer<>(new SizeAwareEntityConsumer());
   }
 
   @Override

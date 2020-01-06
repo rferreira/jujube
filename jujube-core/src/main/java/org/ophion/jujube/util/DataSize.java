@@ -1,4 +1,4 @@
-package org.ophion.jujube.internal.util;
+package org.ophion.jujube.util;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNull;
-import static org.ophion.jujube.internal.util.DataSizeUnit.*;
+import static org.ophion.jujube.util.DataSizeUnit.*;
 
 /**
  * A data size with SI or IEC prefix, such as "128KB" or "5 Gibibytes".

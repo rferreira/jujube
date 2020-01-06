@@ -3,6 +3,7 @@ package org.ophion.jujube.internal.util;
 import org.apache.hc.core5.annotation.Contract;
 import org.apache.hc.core5.annotation.ThreadingBehavior;
 import org.apache.hc.core5.util.ByteArrayBuffer;
+import org.ophion.jujube.util.DataSize;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -18,7 +19,7 @@ import java.util.function.Supplier;
  * have a byte stream of unknown size, and you would like it to end up on disk if it's greater than 1MB and memory
  * otherwise - this streams allow you to do that.
  * <p>
- * Limits are cumulative since bytes are copied from the current tier to the next tier once its limit is reached.
+ * Limits are cumulative since we copy bytes from the current tier to the next tier once we hit the current tier limit.
  *
  * @see OutputStream
  */

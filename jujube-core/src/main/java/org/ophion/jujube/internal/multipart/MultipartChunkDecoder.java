@@ -1,9 +1,11 @@
 package org.ophion.jujube.internal.multipart;
 
+import org.apache.hc.core5.annotation.Contract;
+import org.apache.hc.core5.annotation.ThreadingBehavior;
 import org.apache.hc.core5.util.Args;
-import org.ophion.jujube.internal.util.DataSize;
 import org.ophion.jujube.internal.util.Loggers;
 import org.ophion.jujube.internal.util.TieredOutputStream;
+import org.ophion.jujube.util.DataSize;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -32,6 +34,7 @@ import java.util.Map;
  * Relevant reading:
  * https://tools.ietf.org/html/rfc7578
  */
+@Contract(threading = ThreadingBehavior.UNSAFE)
 public class MultipartChunkDecoder {
   private static final Logger LOG = Loggers.build();
   private static final byte[] TWO_DASHES_CRLF = "--\r\n".getBytes(StandardCharsets.US_ASCII);
@@ -73,38 +76,36 @@ public class MultipartChunkDecoder {
   /**
    * Accumulate chunks into a minimal size (that way the chunk size doesn't really matter) and
    * once the buffer is of a certain size it processes it compacting said buffer when needed.
-   * This is thread safe - believe it or not.
+   * This is NOT thread safe.
    *
    * @param chunk       byte chunk of any size to process
    * @param isLastChunk whether this chunk represents the last chunk in this byte sequence or not.
    */
   public void decode(byte[] chunk, int offset, int length, boolean isLastChunk) throws IOException {
 
-    synchronized (lock) {
-      if (chunk.length > buffer.capacity()) {
-        throw new IllegalStateException("chunk size is greater than the internal buffer size, please try increasing the buffer size");
+    if (chunk.length > buffer.capacity()) {
+      throw new IllegalStateException("chunk size is greater than the internal buffer size, please try increasing the buffer size");
+    }
+
+    var wrappedChunk = ByteBuffer.wrap(chunk, offset, length);
+
+    while (wrappedChunk.hasRemaining()) {
+      if (buffer.remaining() >= wrappedChunk.remaining()) {
+        buffer.put(wrappedChunk);
+      } else {
+        // copying as many bytes as we can
+        var availableCapacity = buffer.remaining();
+        buffer.put(wrappedChunk.slice().limit(availableCapacity));
+        wrappedChunk.position(wrappedChunk.position() + availableCapacity);
       }
-
-      var wrappedChunk = ByteBuffer.wrap(chunk, offset, length);
-
-      while (wrappedChunk.hasRemaining()) {
-        if (buffer.remaining() >= wrappedChunk.remaining()) {
-          buffer.put(wrappedChunk);
-        } else {
-          // copying as many bytes as we can
-          var availableCapacity = buffer.remaining();
-          buffer.put(wrappedChunk.slice().limit(availableCapacity));
-          wrappedChunk.position(wrappedChunk.position() + availableCapacity);
-        }
-        if (buffer.remaining() == 0) {
-          processBuffer(buffer.flip());
-          buffer.compact();
-        }
-      }
-
-      if (isLastChunk) {
+      if (buffer.remaining() == 0) {
         processBuffer(buffer.flip());
+        buffer.compact();
       }
+    }
+
+    if (isLastChunk) {
+      processBuffer(buffer.flip());
     }
   }
 

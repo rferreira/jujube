@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<HttpEntity> {
   private static final Logger LOG = Loggers.build();
@@ -25,9 +26,12 @@ public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
   private MultipartChunkDecoder decoder;
   private ContentType contentType;
   private List<MultipartEntity.Part> parts = new ArrayList<>();
+  private long byteProcessed = 0;
+  private AtomicReference<Exception> exceptionHolder;
 
-  public MultipartEntityConsumer(JujubeConfig config) {
+  public MultipartEntityConsumer(JujubeConfig config, AtomicReference<Exception> exceptionHolder) {
     this.config = config;
+    this.exceptionHolder = exceptionHolder;
   }
 
   @Override
@@ -68,7 +72,12 @@ public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
 
   @Override
   protected void data(ByteBuffer src, boolean endOfStream) throws IOException {
+    if (byteProcessed >= config.getServerConfig().getPostBodySizeLimit().toBytes()) {
+      exceptionHolder.set(new PostSizeLimitExceeded());
+      completed();
+    }
     decoder.decode(src.array(), 0, src.limit(), endOfStream);
+    byteProcessed += src.limit();
   }
 
   @Override

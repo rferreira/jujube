@@ -5,7 +5,7 @@ import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 import org.apache.hc.core5.http.nio.entity.AbstractBinAsyncEntityConsumer;
-import org.ophion.jujube.internal.util.DataSize;
+import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.internal.util.Loggers;
 import org.ophion.jujube.internal.util.TieredOutputStream;
 import org.slf4j.Logger;

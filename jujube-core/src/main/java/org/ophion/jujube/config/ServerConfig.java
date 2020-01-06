@@ -15,7 +15,7 @@ import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.hc.core5.util.Timeout;
 import org.conscrypt.Conscrypt;
 import org.ophion.jujube.internal.JujubeExceptionCallback;
-import org.ophion.jujube.internal.util.DataSize;
+import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.tls.LazySecurePortStrategy;
 import org.ophion.jujube.tls.SelfSignedCertificate;
 
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class ServerConfig {
   private IOReactorConfig ioReactorConfig;
   private H2Config h2Config = H2Config.DEFAULT;
-  private long multiPartPostLimitInBytes = DataSize.megabytes(200).toBytes();
+  private DataSize postBodySizeLimit = DataSize.megabytes(200);
   private HttpVersionPolicy versionPolicy = HttpVersionPolicy.NEGOTIATE;
   private Timeout handshakeTimeout;
   private LookupRegistry<Supplier<AsyncServerExchangeHandler>> lookupRegistry;
@@ -64,12 +64,12 @@ public class ServerConfig {
     }
   }
 
-  public long getMultiPartPostLimitInBytes() {
-    return multiPartPostLimitInBytes;
+  public DataSize getPostBodySizeLimit() {
+    return postBodySizeLimit;
   }
 
-  public void setMultiPartPostLimitInBytes(long multiPartPostLimitInBytes) {
-    this.multiPartPostLimitInBytes = multiPartPostLimitInBytes;
+  public void setPostBodySizeLimit(DataSize postBodySizeLimit) {
+    this.postBodySizeLimit = postBodySizeLimit;
   }
 
   public IOReactorConfig getIoReactorConfig() {

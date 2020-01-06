@@ -1,4 +1,4 @@
-package org.ophion.jujube.internal.util;
+package org.ophion.jujube.util;
 
 /**
  * A unit of information using SI and IEC prefixes.

@@ -5,7 +5,7 @@ import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.core5.http.HttpEntity;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.ophion.jujube.internal.util.DataSize;
+import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.internal.util.Loggers;
 import org.ophion.jujube.response.HttpResponse;
 import org.ophion.jujube.util.RandomInputStream;
