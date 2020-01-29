@@ -6,7 +6,7 @@ import org.apache.hc.core5.io.CloseMode;
 import org.apache.hc.core5.reactor.ListenerEndpoint;
 import org.apache.hc.core5.util.TimeValue;
 import org.ophion.jujube.config.JujubeConfig;
-import org.ophion.jujube.internal.JujubeServerExchangeHandler;
+import org.ophion.jujube.internal.JujubeAsyncServerExchangeHandler;
 import org.ophion.jujube.internal.util.Durations;
 import org.ophion.jujube.internal.util.Loggers;
 import org.slf4j.Logger;
@@ -37,7 +37,7 @@ public class Jujube {
 
   public void startAndWait() throws InterruptedException {
     this.start();
-    Thread.sleep(Long.MAX_VALUE);
+    instance.awaitShutdown(TimeValue.MAX_VALUE);
   }
 
   public void start() {
@@ -49,22 +49,21 @@ public class Jujube {
 
       var bootstrap = H2ServerBootstrap.bootstrap()
         .setH2Config(config.getServerConfig().getH2Config())
+        .setHttp1Config(config.getServerConfig().getHttp1Config())
         .setTlsStrategy(config.getServerConfig().getTlsStrategy())
         .setIOReactorConfig(config.getServerConfig().getIoReactorConfig())
         .setHandshakeTimeout(config.getServerConfig().getHandshakeTimeout())
         .setExceptionCallback(config.getServerConfig().getExceptionCallback())
         .setLookupRegistry(config.getServerConfig().getLookupRegistry())
+        .setCanonicalHostName(config.getServerConfig().getCanonicalHostName())
         .setVersionPolicy(config.getServerConfig().getVersionPolicy());
 
       config.routes()
-        .forEach((k, v) -> bootstrap.register(k, () -> new JujubeServerExchangeHandler(config, v)));
+        .forEach((k, v) -> bootstrap.register(k, () -> new JujubeAsyncServerExchangeHandler(config, v)));
 
       this.instance = bootstrap.create();
 
-      Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-        System.out.println("> HTTP server is shutting down, awaiting in-flight requests...");
-        instance.close(CloseMode.GRACEFUL);
-      }));
+      Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
 
       this.instance.start();
 
@@ -84,10 +83,11 @@ public class Jujube {
   }
 
   public void stop() {
-    instance.close(CloseMode.IMMEDIATE);
+    System.out.println("> HTTP server is shutting down, awaiting in-flight requests...");
+    instance.close(CloseMode.GRACEFUL);
     instance.initiateShutdown();
     try {
-      instance.awaitShutdown(TimeValue.of(5, TimeUnit.SECONDS));
+      instance.awaitShutdown(TimeValue.of(1, TimeUnit.SECONDS));
     } catch (InterruptedException e) {
       throw new IllegalStateException(e);
     }

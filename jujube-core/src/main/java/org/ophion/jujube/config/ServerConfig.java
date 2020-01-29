@@ -2,6 +2,7 @@ package org.ophion.jujube.config;
 
 import org.apache.hc.core5.function.Callback;
 import org.apache.hc.core5.function.Supplier;
+import org.apache.hc.core5.http.config.Http1Config;
 import org.apache.hc.core5.http.nio.AsyncServerExchangeHandler;
 import org.apache.hc.core5.http.nio.ssl.BasicServerTlsStrategy;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
@@ -21,6 +22,7 @@ import org.ophion.jujube.tls.SelfSignedCertificate;
 
 import javax.net.ssl.SSLContext;
 import java.security.KeyStore;
+import java.security.cert.Certificate;
 import java.util.concurrent.TimeUnit;
 
 public class ServerConfig {
@@ -33,6 +35,8 @@ public class ServerConfig {
   private int listenPort;
   private Callback<Exception> exceptionCallback;
   private TlsStrategy tlsStrategy;
+  private String canonicalHostName;
+  private Http1Config http1Config = Http1Config.DEFAULT;
 
   public ServerConfig() {
     this.ioReactorConfig = IOReactorConfig.custom()
@@ -51,7 +55,7 @@ public class ServerConfig {
 
       KeyStore ks = KeyStore.getInstance("PKCS12");
       ks.load(null);
-      ks.setKeyEntry("alias", certificate.key(), password, new java.security.cert.Certificate[]{certificate.cert()});
+      ks.setKeyEntry("alias", certificate.key(), password, new Certificate[]{certificate.cert()});
 
       SSLContext tlsContext = SSLContextBuilder.create()
         .setProvider(Conscrypt.newProvider())
@@ -138,5 +142,21 @@ public class ServerConfig {
 
   public void disableTls() {
     setTlsStrategy(new BasicServerTlsStrategy(localAddress -> false));
+  }
+
+  public String getCanonicalHostName() {
+    return canonicalHostName;
+  }
+
+  public void setCanonicalHostName(String canonicalHostName) {
+    this.canonicalHostName = canonicalHostName;
+  }
+
+  public Http1Config getHttp1Config() {
+    return http1Config;
+  }
+
+  public void setHttp1Config(Http1Config http1Config) {
+    this.http1Config = http1Config;
   }
 }

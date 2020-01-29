@@ -38,7 +38,6 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
     });
 
     config.getServerConfig().setPostBodySizeLimit(DataSize.megabytes(10));
-
     server.start();
 
     HttpEntity entity = MultipartEntityBuilder
@@ -72,7 +71,7 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
     LOG.info("making socket connection");
     Socket socket = new Socket("localhost", config.getServerConfig().getListenPort());
     Assertions.assertTrue(socket.isConnected());
-    Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+    Thread.sleep(TimeUnit.SECONDS.toMillis(5));
     Assertions.assertFalse(socket.isConnected());
   }
 }

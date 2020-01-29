@@ -3,7 +3,7 @@ package org.ophion.jujube.response;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.message.BasicHttpResponse;
 
-public class DefaultHttpResponse extends BasicHttpResponse implements JujubeHttpResponse{
+public class DefaultHttpResponse extends BasicHttpResponse implements JujubeHttpResponse {
   private ContentType contentType = ContentType.TEXT_PLAIN;
   private Object content;
 

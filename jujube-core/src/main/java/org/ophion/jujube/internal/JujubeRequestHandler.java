@@ -7,9 +7,9 @@ import org.apache.hc.core5.http.nio.AsyncRequestConsumer;
 import org.apache.hc.core5.http.nio.AsyncServerRequestHandler;
 import org.apache.hc.core5.http.nio.entity.AsyncEntityProducers;
 import org.apache.hc.core5.http.nio.entity.NoopEntityConsumer;
-import org.apache.hc.core5.http.nio.support.AbstractServerExchangeHandler;
 import org.apache.hc.core5.http.nio.support.AsyncResponseBuilder;
 import org.apache.hc.core5.http.nio.support.BasicRequestConsumer;
+import org.apache.hc.core5.http.nio.support.BasicResponseProducer;
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.net.URLEncodedUtils;
 import org.ophion.jujube.JujubeHttpContext;
@@ -30,51 +30,32 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<Message<HttpRequest, HttpEntity>> {
+public class JujubeRequestHandler implements AsyncServerRequestHandler<Message<HttpRequest, HttpEntity>> {
   private static final Logger LOG = Loggers.build();
   private final Function<JujubeHttpContext, JujubeHttpResponse> handler;
   private final JujubeConfig config;
   private final AtomicReference<Exception> exceptionRef;
 
-  public JujubeServerExchangeHandler(JujubeConfig config, Function<JujubeHttpContext, JujubeHttpResponse> handler) {
+  public JujubeRequestHandler(JujubeConfig config, Function<JujubeHttpContext, JujubeHttpResponse> handler) {
     this.config = config;
     this.handler = handler;
     this.exceptionRef = new AtomicReference<>();
   }
 
-  @SuppressWarnings("rawtypes")
   @Override
-  protected AsyncRequestConsumer<Message<HttpRequest, HttpEntity>> supplyConsumer(HttpRequest request, EntityDetails entityDetails, HttpContext context) throws HttpException {
-    if (entityDetails == null) {
-      //noinspection unchecked
-      return new BasicRequestConsumer(new NoopEntityConsumer());
-    }
-
-    if (entityDetails.getContentType() != null) {
-      var contentType = ContentType.parse(entityDetails.getContentType());
-
-      if (contentType.isSameMimeType(ContentType.MULTIPART_FORM_DATA)) {
-        return new BasicRequestConsumer<>(new MultipartEntityConsumer(config, exceptionRef));
-      }
-    }
-    return new BasicRequestConsumer<>(new SizeAwareEntityConsumer());
+  public AsyncRequestConsumer<Message<HttpRequest, HttpEntity>> prepare(HttpRequest request, EntityDetails entityDetails, HttpContext context) throws HttpException {
+    return new ContentAwareRequestConsumer<>(config, entityDetails, exceptionRef);
   }
 
   @Override
-  protected void handle(Message<HttpRequest, HttpEntity> requestMessage, AsyncServerRequestHandler.ResponseTrigger responseTrigger, HttpContext context) throws HttpException, IOException {
+  public void handle(Message<HttpRequest, HttpEntity> requestObject, ResponseTrigger responseTrigger, HttpContext context) throws HttpException, IOException {
     try {
-
       JujubeHttpResponse response;
 
       // if we errored before getting here, quickly exit:
       if (exceptionRef.get() != null) {
         response = new HttpResponseInternalEngineError();
-        var responseProducer = AsyncResponseBuilder.create(response.getCode())
-          .setEntity(AsyncEntityProducers.create((String) response.getContent()))
-          .setVersion(response.getVersion())
-          .setHeaders(response.getHeaders())
-          .build();
-        responseTrigger.submitResponse(responseProducer, context);
+        responseTrigger.submitResponse(new BasicResponseProducer(response), context);
         return;
       }
 
@@ -84,7 +65,7 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
       // dispatching handler:
       try {
         response = executor.submit(() -> {
-          extractParameters(ctx, requestMessage.getHead(), requestMessage.getBody());
+          extractParameters(ctx, requestObject.getHead(), requestObject.getBody());
           return handler.apply(ctx);
         }).get();
       } catch (ExecutionException e) {
@@ -119,6 +100,7 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
       LOG.error("error handling request", e);
       throw new HttpException();
     }
+
   }
 
   private void extractParameters(JujubeHttpContext context, HttpRequest req, HttpEntity entity) {

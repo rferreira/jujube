@@ -29,7 +29,7 @@ import java.util.Map;
  * - No support for multipart/mixed
  * <p>
  * <p>
- * This class is non-reentrant, any bytes submitted once the EPILOGUE segment is found are simply discarded.
+ * This class is non re-entrant, any bytes submitted once the EPILOGUE segment is found are simply discarded.
  * <p>
  * Relevant reading:
  * https://tools.ietf.org/html/rfc7578
@@ -40,7 +40,6 @@ public class MultipartChunkDecoder {
   private static final byte[] TWO_DASHES_CRLF = "--\r\n".getBytes(StandardCharsets.US_ASCII);
   private final ByteBuffer buffer;
   private final MultipartHandler handler;
-  private final Object lock = new Object();
   private final int minBytesNeeded;
   private final Map<Segment, byte[]> delimiters = new HashMap<>();
   private Segment currentSegment;
@@ -113,7 +112,7 @@ public class MultipartChunkDecoder {
    * Given a {link ByteBuffer}, process it, looking for message delimiters.
    *
    * @param contents contents to be decoded.
-   * @throws IOException
+   * @throws IOException IO error if any.
    */
   private void processBuffer(ByteBuffer contents) throws IOException {
 
