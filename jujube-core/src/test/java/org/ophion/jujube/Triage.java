@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.ophion.jujube.config.JujubeConfig;
-import org.ophion.jujube.internal.JujubeClassicHandler;
-import org.ophion.jujube.internal.JujubeExchangeHandler;
+import org.ophion.jujube.internal.JujubeServerExchangeHandler;
+import org.ophion.jujube.response.HttpResponse;
 import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.util.RandomInputStream;
 
@@ -28,7 +28,7 @@ public class Triage {
   void testFoo() throws ExecutionException, InterruptedException, IOException {
     int port = 9999;
     var config = new JujubeConfig();
-    config.getServerConfig().setPostBodySizeLimit(DataSize.megabytes(2));
+    config.getServerConfig().setRequestEntityLimit(DataSize.megabytes(2));
 
     final HttpAsyncServer server = H2ServerBootstrap.bootstrap()
       .register("*", () -> new ImmediateResponseExchangeHandler(413, "hello world"))
@@ -60,10 +60,12 @@ public class Triage {
   void testBasic() throws ExecutionException, InterruptedException, IOException {
     int port = 9999;
     var config = new JujubeConfig();
-    config.getServerConfig().setPostBodySizeLimit(DataSize.megabytes(2));
+    config.getServerConfig().setRequestEntityLimit(DataSize.megabytes(2));
 
     final HttpAsyncServer server = H2ServerBootstrap.bootstrap()
-      .register("*", () -> new JujubeExchangeHandler(config))
+      .register("*", () -> new JujubeServerExchangeHandler(config, ctx -> {
+        return new HttpResponse();
+      }))
       .setExceptionCallback(Throwable::printStackTrace)
       .create();
 

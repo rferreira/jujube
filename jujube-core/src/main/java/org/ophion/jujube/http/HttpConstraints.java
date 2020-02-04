@@ -3,7 +3,7 @@ package org.ophion.jujube.http;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.Method;
-import org.ophion.jujube.JujubeHttpContext;
+import org.ophion.jujube.context.JujubeHttpContext;
 import org.ophion.jujube.response.JujubeHttpException;
 
 import java.util.function.Supplier;

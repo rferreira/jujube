@@ -16,9 +16,8 @@ import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.hc.core5.util.Timeout;
 import org.conscrypt.Conscrypt;
 import org.ophion.jujube.internal.JujubeExceptionCallback;
+import org.ophion.jujube.internal.tls.SelfSignedCertificate;
 import org.ophion.jujube.util.DataSize;
-import org.ophion.jujube.tls.LazySecurePortStrategy;
-import org.ophion.jujube.tls.SelfSignedCertificate;
 
 import javax.net.ssl.SSLContext;
 import java.security.KeyStore;
@@ -28,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 public class ServerConfig {
   private IOReactorConfig ioReactorConfig;
   private H2Config h2Config = H2Config.DEFAULT;
-  private DataSize postBodySizeLimit = DataSize.megabytes(200);
+  private DataSize requestEntityLimit = DataSize.megabytes(200);
   private HttpVersionPolicy versionPolicy = HttpVersionPolicy.NEGOTIATE;
   private Timeout handshakeTimeout;
   private LookupRegistry<Supplier<AsyncServerExchangeHandler>> lookupRegistry;
@@ -68,12 +67,12 @@ public class ServerConfig {
     }
   }
 
-  public DataSize getPostBodySizeLimit() {
-    return postBodySizeLimit;
+  public DataSize getRequestEntityLimit() {
+    return requestEntityLimit;
   }
 
-  public void setPostBodySizeLimit(DataSize postBodySizeLimit) {
-    this.postBodySizeLimit = postBodySizeLimit;
+  public void setRequestEntityLimit(DataSize requestEntityLimit) {
+    this.requestEntityLimit = requestEntityLimit;
   }
 
   public IOReactorConfig getIoReactorConfig() {

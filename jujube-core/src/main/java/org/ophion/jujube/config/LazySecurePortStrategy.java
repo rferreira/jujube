@@ -1,4 +1,4 @@
-package org.ophion.jujube.tls;
+package org.ophion.jujube.config;
 
 import org.apache.hc.core5.http.nio.ssl.SecurePortStrategy;
 

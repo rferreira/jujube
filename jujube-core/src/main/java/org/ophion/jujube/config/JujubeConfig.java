@@ -1,6 +1,6 @@
 package org.ophion.jujube.config;
 
-import org.ophion.jujube.JujubeHttpContext;
+import org.ophion.jujube.context.JujubeHttpContext;
 import org.ophion.jujube.response.JujubeHttpResponse;
 
 import java.util.LinkedHashMap;

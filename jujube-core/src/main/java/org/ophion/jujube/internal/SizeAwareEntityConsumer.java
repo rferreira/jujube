@@ -5,9 +5,9 @@ import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 import org.apache.hc.core5.http.nio.entity.AbstractBinAsyncEntityConsumer;
-import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.internal.util.Loggers;
 import org.ophion.jujube.internal.util.TieredOutputStream;
+import org.ophion.jujube.util.DataSize;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -17,6 +17,7 @@ public class SizeAwareEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
   private static final Logger LOG = Loggers.build();
   private final TieredOutputStream buffer;
   private ContentType contentType;
+
   public SizeAwareEntityConsumer() {
     buffer = new TieredOutputStream(DataSize.mebibytes(5), DataSize.megabytes(100));
   }
@@ -28,7 +29,7 @@ public class SizeAwareEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
   }
 
   @Override
-  protected HttpEntity generateContent() {
+  protected HttpEntity generateContent() throws IOException {
     return new InputStreamEntity(buffer.getContentAsStream(), contentType);
   }
 

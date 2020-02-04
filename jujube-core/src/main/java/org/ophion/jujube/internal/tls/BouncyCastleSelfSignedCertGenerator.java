@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package org.ophion.jujube.tls;
+package org.ophion.jujube.internal.tls;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -33,15 +33,16 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
-import static org.ophion.jujube.tls.SelfSignedCertificate.newSelfSignedCertificate;
-
 
 /**
  * Generates a self-signed certificate using <a href="http://www.bouncycastle.org/">Bouncy Castle</a>.
  */
-final class BouncyCastleSelfSignedCertGenerator {
+public class BouncyCastleSelfSignedCertGenerator {
 
   private static final Provider PROVIDER = new BouncyCastleProvider();
+
+  private BouncyCastleSelfSignedCertGenerator() {
+  }
 
   static String[] generate(String fqdn, KeyPair keypair, SecureRandom random, Date notBefore, Date notAfter)
     throws Exception {
@@ -57,8 +58,6 @@ final class BouncyCastleSelfSignedCertGenerator {
     X509Certificate cert = new JcaX509CertificateConverter().setProvider(PROVIDER).getCertificate(certHolder);
     cert.verify(keypair.getPublic());
 
-    return newSelfSignedCertificate(fqdn, key, cert);
+    return SelfSignedCertificate.newSelfSignedCertificate(fqdn, key, cert);
   }
-
-  private BouncyCastleSelfSignedCertGenerator() { }
 }

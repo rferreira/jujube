@@ -31,11 +31,13 @@ public class ContentAwareRequestConsumer<T> implements AsyncRequestConsumer<Mess
     this.config = config;
     this.exceptionHolder = exceptionRef;
 
+
     consumer = (AsyncEntityConsumer<T>) new NoopEntityConsumer();
 
     if (details != null) {
-      //TODO(raf): make this configurable with some sort of registry:
-      if (details.getContentType() != null) {
+      boolean isContentGreaterThanLimit = details.getContentLength() > config.getServerConfig().getRequestEntityLimit().toBytes();
+
+      if (!isContentGreaterThanLimit && details.getContentType() != null) {
         var contentType = ContentType.parse(details.getContentType());
         if (contentType.isSameMimeType(ContentType.MULTIPART_FORM_DATA)) {
           consumer = (AsyncEntityConsumer<T>) new MultipartEntityConsumer();
@@ -108,13 +110,13 @@ public class ContentAwareRequestConsumer<T> implements AsyncRequestConsumer<Mess
     consumer.consume(src);
     bytesProcessed += src.limit();
 
-    var limit = config.getServerConfig().getPostBodySizeLimit();
+    var limit = config.getServerConfig().getRequestEntityLimit();
 
-    if (bytesProcessed >= limit.toBytes()) {
-      var message = String.format("> ERROR: request body size limit exceeded, stopped after processing %s and limit is %s - aborting request.",
+    if (bytesProcessed > limit.toBytes()) {
+      var message = String.format("> ERROR: request entity size limit exceeded, stopped after processing %s and limit is %s - aborting request.",
         DataSize.bytes(bytesProcessed), limit);
       System.err.println(message);
-      exceptionHolder.set(new PostSizeLimitExceeded(message));
+      exceptionHolder.set(new RequestEntityLimitExceeded(message));
 
       // discarding remaining bits
       isDiscarding = true;

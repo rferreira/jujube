@@ -13,7 +13,9 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -68,5 +70,14 @@ public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
   @Override
   public void releaseResources() {
     LOG.debug("releasing resources");
+    parts.forEach(part -> {
+      if (!part.isText()) {
+        try {
+          Files.deleteIfExists(Paths.get(part.getValue()));
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    });
   }
 }

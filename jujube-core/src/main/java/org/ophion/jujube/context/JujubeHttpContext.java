@@ -1,14 +1,16 @@
-package org.ophion.jujube;
+package org.ophion.jujube.context;
 
 import org.apache.hc.core5.annotation.Contract;
 import org.apache.hc.core5.annotation.ThreadingBehavior;
-import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.http.protocol.HttpCoreContext;
 import org.ophion.jujube.config.JujubeConfig;
 
-import javax.net.ssl.SSLSession;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Contract(threading = ThreadingBehavior.UNSAFE)
 public final class JujubeHttpContext extends HttpCoreContext {
@@ -20,8 +22,15 @@ public final class JujubeHttpContext extends HttpCoreContext {
     super(context);
   }
 
-  public Optional<String> getParameter(String name, ParameterSource source) {
-    return Optional.ofNullable(getAttribute(String.format("%s.%s.%s", PREFIX, source, name), String.class));
+  public Optional<Parameter> getParameter(String name, ParameterSource source) {
+    if (source == ParameterSource.HEADER) {
+      return Stream.of(getResponse().getHeaders())
+        .filter(header -> header.getName().equals(name))
+        .map(header -> (Parameter) new TextParameter(name, header.getValue(), ContentType.TEXT_PLAIN))
+        .findFirst();
+    }
+
+    return Optional.ofNullable(getAttribute(String.format("%s.%s.%s", PREFIX, source, name), Parameter.class));
   }
 
   public JujubeConfig getConfig() {
@@ -37,8 +46,8 @@ public final class JujubeHttpContext extends HttpCoreContext {
     setAttribute(CONTENT_TYPE, ContentType.parse(entity.getContentType()));
   }
 
-  public void setParameter(ParameterSource source, String name, String value) {
-    setAttribute(String.format("%s.%s.%s", PREFIX, source, name), value);
+  public void setParameter(ParameterSource source, Parameter param) {
+    setAttribute(String.format("%s.%s.%s", PREFIX, source, param.name()), param);
   }
 
   public Optional<ContentType> getEntityContentType() {

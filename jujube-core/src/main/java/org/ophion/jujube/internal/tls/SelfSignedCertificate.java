@@ -1,4 +1,4 @@
-package org.ophion.jujube.tls;
+package org.ophion.jujube.internal.tls;
 /*
  * Copyright 2014 The Netty Project
  *

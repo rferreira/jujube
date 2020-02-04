@@ -6,7 +6,7 @@ import org.apache.hc.core5.io.CloseMode;
 import org.apache.hc.core5.reactor.ListenerEndpoint;
 import org.apache.hc.core5.util.TimeValue;
 import org.ophion.jujube.config.JujubeConfig;
-import org.ophion.jujube.internal.JujubeAsyncServerExchangeHandler;
+import org.ophion.jujube.internal.JujubeServerExchangeHandler;
 import org.ophion.jujube.internal.util.Durations;
 import org.ophion.jujube.internal.util.Loggers;
 import org.slf4j.Logger;
@@ -59,7 +59,7 @@ public class Jujube {
         .setVersionPolicy(config.getServerConfig().getVersionPolicy());
 
       config.routes()
-        .forEach((k, v) -> bootstrap.register(k, () -> new JujubeAsyncServerExchangeHandler(config, v)));
+        .forEach((k, v) -> bootstrap.register(k, () -> new JujubeServerExchangeHandler(config, v)));
 
       this.instance = bootstrap.create();
 
@@ -72,7 +72,7 @@ public class Jujube {
 
       var isTlsEnabled = config.getServerConfig().getTlsStrategy() != null;
       System.out.println(String.format("> HTTP server started (on %s) in %s with %d known routes and TLS %s, enjoy \uD83C\uDF89",
-        listenerEndpoint.getAddress(),
+        listenerEndpoint.toString(),
         Durations.humanize(Duration.between(startInstant, Instant.now())), config.routes().size(),
         isTlsEnabled ? "ON" : "OFF")
       );
@@ -87,7 +87,7 @@ public class Jujube {
     instance.close(CloseMode.GRACEFUL);
     instance.initiateShutdown();
     try {
-      instance.awaitShutdown(TimeValue.of(1, TimeUnit.SECONDS));
+      instance.awaitShutdown(TimeValue.of(100, TimeUnit.MILLISECONDS));
     } catch (InterruptedException e) {
       throw new IllegalStateException(e);
     }

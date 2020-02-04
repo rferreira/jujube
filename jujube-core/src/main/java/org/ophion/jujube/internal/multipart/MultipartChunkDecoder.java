@@ -116,7 +116,6 @@ public class MultipartChunkDecoder {
    */
   private void processBuffer(ByteBuffer contents) throws IOException {
 
-    //TODO: check limits here
     if (currentSegment == Segment.EPILOGUE) {
       contents.position(contents.limit());
       return;
@@ -127,9 +126,6 @@ public class MultipartChunkDecoder {
         LOG.trace("position {}/{}", contents.position(), contents.limit());
         LOG.trace("buffer contents:\n{}", new String(contents.array(), contents.position(), contents.limit(), StandardCharsets.US_ASCII));
       }
-
-      // check limits to prevent exploits:
-      checkLimits();
 
       // identifying the next limiter we would like to search for:
       byte[] currentDelimiter = delimiters.get(currentSegment);
@@ -163,7 +159,7 @@ public class MultipartChunkDecoder {
 
       if (currentSegment == Segment.HEADER) {
         if (headerAccumulator == null) {
-          headerAccumulator = new TieredOutputStream(this.headerSizeLimit, DataSize.kibibytes(0));
+          headerAccumulator = new TieredOutputStream(this.headerSizeLimit);
         }
         // if end limiter not found, consume everything:
         if (hasReachedSegmentEnd) {
@@ -179,7 +175,7 @@ public class MultipartChunkDecoder {
       if (currentSegment == Segment.BODY) {
         // if an accumulator doesn't exist, let's create one:
         if (currentPartBodyAccumulator == null) {
-          currentPartBodyAccumulator = new TieredOutputStream(DataSize.kibibytes(0), this.bodySizeLimit);
+          currentPartBodyAccumulator = new TieredOutputStream(this.bodySizeLimit);
         }
 
         if (!hasReachedSegmentEnd) {
@@ -247,12 +243,5 @@ public class MultipartChunkDecoder {
         contents.position(contents.position() + currentDelimiter.length - 1);
       }
     }
-  }
-
-  private void checkLimits() {
-    //TODO: fill limits in
-    // limit all stringbuilders
-    // limit the amount of bytes to process before starting processing
-
   }
 }
