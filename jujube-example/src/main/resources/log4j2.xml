@@ -9,7 +9,7 @@
     <Root level="error">
       <AppenderRef ref="Console"/>
     </Root>
-    <Logger name="org.ophion.jujube" level="info" additivity="false">
+    <Logger name="org.ophion.jujube" level="debug" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
   </Loggers>

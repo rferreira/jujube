@@ -8,7 +8,7 @@ import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.ophion.jujube.response.HttpResponse;
+import org.ophion.jujube.response.JujubeHttpResponse;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +27,7 @@ class JujubeTest extends IntegrationTest {
   void shouldRouteRequests() throws IOException {
     AtomicInteger counter = new AtomicInteger();
     config.route("/hello", (ctx) -> {
-      var response = new HttpResponse("w00t");
+      var response = new JujubeHttpResponse("w00t");
       response.setCode(207);
       counter.incrementAndGet();
       return response;
@@ -76,7 +76,7 @@ class JujubeTest extends IntegrationTest {
 
     AtomicInteger counter = new AtomicInteger();
     config.route("/hello", (ctx) -> {
-      var response = new HttpResponse();
+      var response = new JujubeHttpResponse();
       try {
         Assertions.assertEquals(contents, EntityUtils.toString(ctx.getEntity().orElseThrow()));
       } catch (IOException | ParseException e) {

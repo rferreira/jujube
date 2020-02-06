@@ -10,11 +10,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.function.Supplier;
 
 /**
@@ -27,19 +27,20 @@ import java.util.function.Supplier;
 @Contract(threading = ThreadingBehavior.UNSAFE)
 public class TieredOutputStream extends OutputStream implements AutoCloseable {
   private static final Logger LOG = Loggers.build();
-  private static final DataSize MINIMAL_BUFFER_SIZE = DataSize.kibibytes(64);
+  private static final DataSize DEFAULT_BUFFER_SIZE = DataSize.kibibytes(64);
   private final DataSize memoryLimit;
   private boolean isWritingToFile = false;
   private long size;
-  private OutputStream fileOutputStream;
+  private FileChannel channel;
   private ByteBuffer buffer;
   private DataSize limit;
   private Path fd;
   private boolean isClosed = false;
+  private boolean forceSyncWithEveryFlushEnabled = false;
 
 
   public TieredOutputStream(DataSize limit) {
-    this(MINIMAL_BUFFER_SIZE, limit);
+    this(DEFAULT_BUFFER_SIZE, limit);
   }
 
   public TieredOutputStream(DataSize memoryLimit, DataSize limit) {
@@ -53,7 +54,7 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
   }
 
   public TieredOutputStream(DataSize memoryLimit, DataSize totalLimit, Supplier<Path> tempFileSupplier) {
-    this.buffer = ByteBuffer.allocate((int) Math.max(memoryLimit.toBytes(), MINIMAL_BUFFER_SIZE.toBytes()));
+    this.buffer = ByteBuffer.allocate((int) memoryLimit.toBytes());
     this.limit = totalLimit;
     this.memoryLimit = memoryLimit;
 
@@ -61,6 +62,11 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
       throw new IllegalArgumentException("total limit cannot be smaller than memory limit");
     }
     this.fd = tempFileSupplier.get();
+    try {
+      this.channel = FileChannel.open(fd, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Override
@@ -83,7 +89,6 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
       throw new IllegalStateException("This stream has been closed and cannot be written to!");
     }
 
-
     // nothing to flush, return immediately
     if (buffer.position() == 0) {
       return;
@@ -92,27 +97,25 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
     size += buffer.position();
 
     if (!isWritingToFile && (size >= memoryLimit.toBytes())) {
-      isWritingToFile = true;
       LOG.debug("spilling buffer to disk...");
-      // no need to double buffer since we're already chunking writes:
-      fileOutputStream = Files.newOutputStream(fd, StandardOpenOption.TRUNCATE_EXISTING);
+      isWritingToFile = true;
     }
 
     if (isWritingToFile) {
-      fileOutputStream.write(buffer.array(), 0, buffer.position());
-      fileOutputStream.flush();
+      buffer.flip();
+
+      writeBufferToChannel();
+
+      buffer.clear();
 
       if (size > limit.toBytes()) {
         throw new IllegalStateException("Max file limit exceeded, cannot process any more bytes");
       }
-
-      buffer.clear();
-
     }
   }
 
   /**
-   * Returns a input stream suitable for reading this stream's content. If we're not yet writing to a file, we return
+   * Returns an input stream suitable for reading this stream's content. If we're not yet writing to a file, we return
    * it directly from memory.
    *
    * @return a stream that allows you to read the entire contents of this stream.
@@ -151,11 +154,16 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
   public Path getContentsAsPath() throws IOException {
     if (!isWritingToFile) {
       LOG.debug("path requested while contents are only in memory, flushing and returning a temp file");
-      //TODO we should try to find a way to flush this without a copy operation:
-      Files.write(fd, Arrays.copyOfRange(buffer.array(), 0, buffer.position()));
+      var originalBufferPosition = buffer.position();
+      buffer.flip();
+      writeBufferToChannel();
+      channel.position(0);
+      buffer.position(originalBufferPosition);
+    } else {
+      // gratis flush to ensure consistency:
+      flush();
     }
-    // gratis flush to ensure consistency:
-    flush();
+
     return fd;
   }
 
@@ -182,6 +190,23 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
     }
     isClosed = true;
     LOG.debug("deleting {}", fd);
+    channel.close();
     Files.deleteIfExists(fd);
+  }
+
+  public boolean isForceSyncWithEveryFlushEnabled() {
+    return forceSyncWithEveryFlushEnabled;
+  }
+
+  public void setForceSyncWithEveryFlushEnabled(boolean forceSyncWithEveryFlushEnabled) {
+    this.forceSyncWithEveryFlushEnabled = forceSyncWithEveryFlushEnabled;
+  }
+
+  private void writeBufferToChannel() throws IOException {
+    channel.write(buffer);
+    if (forceSyncWithEveryFlushEnabled) {
+      LOG.debug("performing fsync");
+      channel.force(true);
+    }
   }
 }

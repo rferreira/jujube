@@ -16,8 +16,7 @@ import org.apache.hc.core5.ssl.SSLContexts;
 import org.openjdk.jmh.annotations.*;
 import org.ophion.jujube.Jujube;
 import org.ophion.jujube.config.JujubeConfig;
-import org.ophion.jujube.internal.util.TieredOutputStream;
-import org.ophion.jujube.response.HttpResponse;
+import org.ophion.jujube.response.JujubeHttpResponse;
 import org.ophion.jujube.util.DataSize;
 
 import javax.net.ssl.SSLContext;
@@ -33,22 +32,11 @@ import java.security.NoSuchAlgorithmException;
 public class MultipartBenchmark {
 
   @Benchmark
-  public void measureTiredOutputStreamWriteSpeed(BenchmarkState state) throws IOException {
-    var ins = new JunkInputStream(DataSize.megabytes(state.payloadSizeInMB).toBytes());
-    try (var ous = new TieredOutputStream(DataSize.bytes(8192), DataSize.megabytes(100))) {
-      int b;
-      while ((b = ins.read()) > 0) {
-        ous.write(b);
-      }
-    }
-  }
-
-  @Benchmark
-  public void jujube(BenchmarkState state) throws IOException {
+  public void post(BenchmarkState state) throws IOException {
 
     HttpEntity entity = MultipartEntityBuilder
       .create()
-      .addBinaryBody("file", new JunkInputStream(DataSize.megabytes(state.payloadSizeInMB).toBytes()))
+      .addBinaryBody("file", new RepeatingInputStream(DataSize.megabytes(state.payloadSizeInMB).toBytes()))
       .build();
 
     var request = new HttpPost(state.endpoint.resolve("/post"));
@@ -56,7 +44,7 @@ public class MultipartBenchmark {
 
     state.client.execute(request, response -> {
       if (response.getCode() != 200) {
-        System.exit(200);
+        System.exit(response.getCode());
       }
       return true;
     });
@@ -64,7 +52,7 @@ public class MultipartBenchmark {
 
   @State(Scope.Benchmark)
   public static class BenchmarkState {
-    @Param({"1", "100"})
+    @Param({"1", "5", "10", "100"})
     public int payloadSizeInMB;
     private URI endpoint;
     private HttpClient client;
@@ -90,7 +78,7 @@ public class MultipartBenchmark {
         .build();
 
       var config = new JujubeConfig();
-      config.route("/*", ctx -> new HttpResponse(200));
+      config.route("/*", ctx -> new JujubeHttpResponse(200));
       server = new Jujube(config);
 
       this.endpoint = URIBuilder.localhost().setPort(config.getServerConfig().getListenPort()).setScheme("https").build();

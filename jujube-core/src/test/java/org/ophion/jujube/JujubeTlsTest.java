@@ -3,7 +3,7 @@ package org.ophion.jujube;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.ophion.jujube.response.HttpResponse;
+import org.ophion.jujube.response.JujubeHttpResponse;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,7 +13,7 @@ public class JujubeTlsTest extends IntegrationTest {
   void shouldAllowUsersToDisable() throws IOException {
     AtomicInteger counter = new AtomicInteger();
     config.route("/hello", (ctx) -> {
-      var response = new HttpResponse("w00t");
+      var response = new JujubeHttpResponse("w00t");
       response.setCode(207);
       counter.incrementAndGet();
       return response;
@@ -36,7 +36,7 @@ public class JujubeTlsTest extends IntegrationTest {
 
     AtomicInteger counter = new AtomicInteger();
     config.route("/hello", (ctx) -> {
-      var response = new HttpResponse("w00t");
+      var response = new JujubeHttpResponse("w00t");
       response.setCode(207);
       counter.incrementAndGet();
       return response;

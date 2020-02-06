@@ -31,7 +31,6 @@ public class ContentAwareRequestConsumer<T> implements AsyncRequestConsumer<Mess
     this.config = config;
     this.exceptionHolder = exceptionRef;
 
-
     consumer = (AsyncEntityConsumer<T>) new NoopEntityConsumer();
 
     if (details != null) {
@@ -57,7 +56,7 @@ public class ContentAwareRequestConsumer<T> implements AsyncRequestConsumer<Mess
     if (entityDetails != null) {
       this.resultCallback = resultCallback;
 
-      consumer.streamStart(entityDetails, new FutureCallback<T>() {
+      consumer.streamStart(entityDetails, new FutureCallback<>() {
         @Override
         public void completed(T body) {
           final Message<HttpRequest, T> result = new Message<>(request, body);
@@ -91,6 +90,8 @@ public class ContentAwareRequestConsumer<T> implements AsyncRequestConsumer<Mess
   @Override
   public void failed(Exception cause) {
     releaseResources();
+    LOG.error("error while processing content ", cause);
+    throw new IllegalStateException(cause);
   }
 
   @Override
@@ -106,9 +107,10 @@ public class ContentAwareRequestConsumer<T> implements AsyncRequestConsumer<Mess
       }
       return;
     }
+    // we need to do this here before consuming the byte buffer:
+    bytesProcessed += src.limit();
 
     consumer.consume(src);
-    bytesProcessed += src.limit();
 
     var limit = config.getServerConfig().getRequestEntityLimit();
 

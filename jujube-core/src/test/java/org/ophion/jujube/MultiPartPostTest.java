@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.ophion.jujube.context.FileParameter;
 import org.ophion.jujube.context.ParameterSource;
 import org.ophion.jujube.internal.util.Loggers;
-import org.ophion.jujube.response.HttpResponse;
+import org.ophion.jujube.response.JujubeHttpResponse;
 import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.util.RepeatingInputStream;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ class MultiPartPostTest extends IntegrationTest {
   void shouldHandleMultiPartFormPosts() throws IOException {
     config.route("/post", (ctx) -> {
       LOG.info("here");
-      Assertions.assertEquals("value1", ctx.getParameter("text1", ParameterSource.FORM).orElseThrow().value());
+      Assertions.assertEquals("value1", ctx.getParameter("text1", ParameterSource.FORM).orElseThrow().asText());
       try {
         var param = (FileParameter) (ctx.getParameter("file", ParameterSource.FORM).orElseThrow());
         Assertions.assertArrayEquals("00000".getBytes(), Files.readAllBytes(param.asPath()));
@@ -31,9 +31,7 @@ class MultiPartPostTest extends IntegrationTest {
         throw new IllegalStateException(e);
       }
 
-      var response = new HttpResponse("w00t");
-      response.setCode(200);
-      return response;
+      return new JujubeHttpResponse("w00t");
     });
 
     server.start();
@@ -64,9 +62,7 @@ class MultiPartPostTest extends IntegrationTest {
         throw new IllegalStateException(e);
       }
 
-      var response = new HttpResponse("w00t");
-      response.setCode(200);
-      return response;
+      return new JujubeHttpResponse("w00t");
     });
 
     server.start();

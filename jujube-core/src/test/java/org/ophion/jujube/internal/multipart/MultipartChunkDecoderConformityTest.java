@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -151,15 +153,19 @@ public class MultipartChunkDecoderConformityTest {
           toDelete.add(path);
         }
       });
-
-      while (true) {
-        byte[] chunk = new byte[64];
-        int bytesRead = ins.read(chunk);
-        decoder.decode(chunk, 0, Math.max(bytesRead, 0), bytesRead == -1);
-        if (bytesRead == -1) {
-          break;
+      ByteBuffer buffer = ByteBuffer.allocate(8192);
+      ins.transferTo(new OutputStream() {
+        @Override
+        public void write(int b) throws IOException {
+          buffer.put((byte) b);
+          if (!buffer.hasRemaining()) {
+            decoder.decode(buffer.flip(), false);
+            buffer.clear();
+          }
         }
-      }
+      });
+      decoder.decode(buffer.flip(), true);
+
       multipartExpectations.checkParts(parts, s -> parts.keySet().stream()
         .filter(part -> part.getName().equals(s)).findFirst()
         .orElseThrow(() -> new IllegalStateException("could not find part named:" + s)));

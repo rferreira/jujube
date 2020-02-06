@@ -5,7 +5,6 @@ import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
-import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.TimeValue;
 import org.junit.jupiter.api.Assertions;
@@ -13,16 +12,16 @@ import org.junit.jupiter.api.Test;
 import org.ophion.jujube.context.FileParameter;
 import org.ophion.jujube.context.ParameterSource;
 import org.ophion.jujube.internal.util.Loggers;
-import org.ophion.jujube.response.HttpResponse;
+import org.ophion.jujube.response.JujubeHttpResponse;
 import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.util.RandomInputStream;
+import org.ophion.jujube.util.RepeatingInputStream;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 public class SuspiciousBehaviorTest extends IntegrationTest {
@@ -39,10 +38,7 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
       } catch (IOException e) {
         throw new IllegalStateException(e);
       }
-
-      var response = new HttpResponse("w00t");
-      response.setCode(200);
-      return response;
+      return new JujubeHttpResponse("w00t");
     });
 
     config.getServerConfig().setRequestEntityLimit(DataSize.megabytes(1));
@@ -50,7 +46,7 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
 
     HttpEntity entity = MultipartEntityBuilder
       .create()
-      .addBinaryBody("file", new RandomInputStream(size.toBytes()))
+      .addBinaryBody("file", new RepeatingInputStream(size.toBytes()))
       .build();
 
     var request = new HttpPost(endpoint.resolve("/post"));
@@ -66,7 +62,7 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
   void shouldLimitPostSizeByContentLength() throws IOException {
     config.route("/post", ctx -> {
       Assertions.assertFalse(ctx.getParameter("file", ParameterSource.FORM).isPresent());
-      var response = new HttpResponse("w00t");
+      var response = new JujubeHttpResponse("w00t");
       response.setCode(200);
       return response;
     });
@@ -87,9 +83,7 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
   @Test
   void shouldShutdownIdleConnections() throws IOException, InterruptedException {
     config.route("/*", ctx -> {
-      var response = new HttpResponse("w00t");
-      response.setCode(200);
-      return response;
+      return new JujubeHttpResponse("w00t");
     });
 
     // we need to set both the timeout, and the select internal since they relate to one another
@@ -115,15 +109,13 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
       try {
         var p2 = ctx.getParameter("file", ParameterSource.FORM).orElseThrow();
         Assertions.assertFalse(p2.isText());
-        var contents = Files.readString( ((FileParameter) p2).asPath());
+        var contents = Files.readString(((FileParameter) p2).asPath());
         Assertions.assertEquals(stringThatLooksLikePath, contents);
       } catch (Exception e) {
         throw new IllegalStateException(e);
       }
 
-      var response = new HttpResponse("w00t");
-      response.setCode(200);
-      return response;
+      return new JujubeHttpResponse("w00t");
     });
 
     server.start();

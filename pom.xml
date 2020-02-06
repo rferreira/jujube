@@ -11,6 +11,7 @@
   <modules>
     <module>jujube-benchmark</module>
     <module>jujube-core</module>
+    <module>jujube-example</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

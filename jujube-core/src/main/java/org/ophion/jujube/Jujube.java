@@ -71,7 +71,7 @@ public class Jujube {
       final ListenerEndpoint listenerEndpoint = future.get();
 
       var isTlsEnabled = config.getServerConfig().getTlsStrategy() != null;
-      System.out.println(String.format("> HTTP server started (on %s) in %s with %d known routes and TLS %s, enjoy \uD83C\uDF89",
+      System.out.println(String.format("> HTTP server started (on %s) in %s with %d known route(s) and TLS %s, enjoy \uD83C\uDF89",
         listenerEndpoint.toString(),
         Durations.humanize(Duration.between(startInstant, Instant.now())), config.routes().size(),
         isTlsEnabled ? "ON" : "OFF")

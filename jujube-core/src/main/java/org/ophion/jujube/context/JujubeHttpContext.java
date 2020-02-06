@@ -17,16 +17,18 @@ public final class JujubeHttpContext extends HttpCoreContext {
   private static final String PREFIX = "jujube";
   private static final String CONTENT = PREFIX + ".content";
   private static final String CONTENT_TYPE = CONTENT + ".type";
+  private final JujubeConfig config;
 
-  public JujubeHttpContext(HttpContext context) {
+  public JujubeHttpContext(JujubeConfig config, HttpContext context) {
     super(context);
+    this.config = config;
   }
 
   public Optional<Parameter> getParameter(String name, ParameterSource source) {
     if (source == ParameterSource.HEADER) {
       return Stream.of(getResponse().getHeaders())
         .filter(header -> header.getName().equals(name))
-        .map(header -> (Parameter) new TextParameter(name, header.getValue(), ContentType.TEXT_PLAIN))
+        .map(header -> (Parameter) new PrimitiveParameter(name, header.getValue(), ContentType.TEXT_PLAIN))
         .findFirst();
     }
 
@@ -34,7 +36,7 @@ public final class JujubeHttpContext extends HttpCoreContext {
   }
 
   public JujubeConfig getConfig() {
-    return (JujubeConfig) getAttribute(PREFIX + "config");
+    return config;
   }
 
   public Optional<HttpEntity> getEntity() {

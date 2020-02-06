@@ -13,9 +13,7 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +51,7 @@ public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
   }
 
   @Override
-  protected HttpEntity generateContent() throws IOException {
+  protected HttpEntity generateContent() {
     return new MultipartEntity(Collections.unmodifiableList(parts), this.contentType, null);
   }
 
@@ -64,20 +62,16 @@ public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
 
   @Override
   protected void data(ByteBuffer src, boolean endOfStream) throws IOException {
-    decoder.decode(src.array(), 0, src.limit(), endOfStream);
+    decoder.decode(src, endOfStream);
   }
 
   @Override
   public void releaseResources() {
     LOG.debug("releasing resources");
-    parts.forEach(part -> {
-      if (!part.isText()) {
-        try {
-          Files.deleteIfExists(Paths.get(part.getValue()));
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    });
+    try {
+      decoder.close();
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    }
   }
 }

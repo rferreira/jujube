@@ -1,18 +1,19 @@
 package org.ophion.jujube.config;
 
-import org.ophion.jujube.context.JujubeHttpContext;
-import org.ophion.jujube.response.JujubeHttpResponse;
+import org.ophion.jujube.route.RouteHandler;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
-import java.util.function.Function;
 
 public class JujubeConfig {
   private final ServerConfig serverConfig = new ServerConfig();
   private ExecutorService executorService = ForkJoinPool.commonPool();
-  private Map<String, Function<JujubeHttpContext, JujubeHttpResponse>> routes = new LinkedHashMap<>();
+  private Map<String, RouteHandler> routes = new LinkedHashMap<>();
+
+  public JujubeConfig() {
+  }
 
   public ExecutorService getExecutorService() {
     return executorService;
@@ -26,14 +27,11 @@ public class JujubeConfig {
     return serverConfig;
   }
 
-  public void route(String uriPattern, Function<JujubeHttpContext, JujubeHttpResponse> handler) {
+  public void route(String uriPattern, RouteHandler handler) {
     this.routes.put(uriPattern, handler);
   }
 
-  public Map<String, Function<JujubeHttpContext, JujubeHttpResponse>> routes() {
+  public Map<String, RouteHandler> routes() {
     return routes;
-  }
-
-  public JujubeConfig() {
   }
 }

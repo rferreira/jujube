@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.ophion.jujube.config.JujubeConfig;
 import org.ophion.jujube.internal.JujubeServerExchangeHandler;
-import org.ophion.jujube.response.HttpResponse;
+import org.ophion.jujube.response.JujubeHttpResponse;
 import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.util.RandomInputStream;
 
@@ -64,7 +64,7 @@ public class Triage {
 
     final HttpAsyncServer server = H2ServerBootstrap.bootstrap()
       .register("*", () -> new JujubeServerExchangeHandler(config, ctx -> {
-        return new HttpResponse();
+        return new JujubeHttpResponse();
       }))
       .setExceptionCallback(Throwable::printStackTrace)
       .create();

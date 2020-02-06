@@ -9,5 +9,11 @@ public interface Parameter {
 
   String name();
 
-  String value();
+  String asText();
+
+  int asInteger();
+
+  float asFloat();
+
+  long asLong();
 }

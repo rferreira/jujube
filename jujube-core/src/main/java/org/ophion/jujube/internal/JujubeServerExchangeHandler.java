@@ -14,13 +14,14 @@ import org.ophion.jujube.config.JujubeConfig;
 import org.ophion.jujube.context.FileParameter;
 import org.ophion.jujube.context.JujubeHttpContext;
 import org.ophion.jujube.context.ParameterSource;
-import org.ophion.jujube.context.TextParameter;
+import org.ophion.jujube.context.PrimitiveParameter;
 import org.ophion.jujube.http.MultipartEntity;
 import org.ophion.jujube.internal.util.Loggers;
-import org.ophion.jujube.response.HttpResponseInternalEngineError;
 import org.ophion.jujube.response.HttpResponseRequestTooLarge;
+import org.ophion.jujube.response.HttpResponseServerError;
 import org.ophion.jujube.response.JujubeHttpException;
 import org.ophion.jujube.response.JujubeHttpResponse;
+import org.ophion.jujube.route.RouteHandler;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -30,15 +31,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 
 public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<Message<HttpRequest, HttpEntity>> {
   private static final Logger LOG = Loggers.build();
   private final JujubeConfig config;
-  private final Function<JujubeHttpContext, JujubeHttpResponse> handler;
+  private final RouteHandler handler;
   private AtomicReference<Exception> exceptionRef;
 
-  public JujubeServerExchangeHandler(JujubeConfig config, Function<JujubeHttpContext, JujubeHttpResponse> handler) {
+  public JujubeServerExchangeHandler(JujubeConfig config, RouteHandler handler) {
     this.config = config;
     this.handler = handler;
     this.exceptionRef = new AtomicReference<>();
@@ -46,6 +46,8 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
 
   @Override
   protected AsyncRequestConsumer<Message<HttpRequest, HttpEntity>> supplyConsumer(HttpRequest request, EntityDetails entityDetails, HttpContext context) throws HttpException {
+    LOG.debug("handling request: {}", request.toString());
+
     return new ContentAwareRequestConsumer<>(config, entityDetails, exceptionRef);
   }
 
@@ -54,7 +56,7 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
     try {
       JujubeHttpResponse response = null;
       final var executor = config.getExecutorService();
-      final var ctx = new JujubeHttpContext(context);
+      final var ctx = new JujubeHttpContext(this.config, context);
 
       // if we errored before getting here, quickly exit:
       if (exceptionRef.get() != null) {
@@ -62,7 +64,7 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
         if (ex instanceof RequestEntityLimitExceeded) {
           response = new HttpResponseRequestTooLarge();
         } else {
-          response = new HttpResponseInternalEngineError();
+          response = new HttpResponseServerError();
         }
       }
 
@@ -71,13 +73,14 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
         try {
           response = executor.submit(() -> {
             extractParameters(ctx, requestMessage.getHead(), requestMessage.getBody());
-            return handler.apply(ctx);
+            return handler.handle(ctx);
           }).get();
         } catch (ExecutionException e) {
           if (e.getCause() instanceof JujubeHttpException) {
             response = (JujubeHttpResponse) ((JujubeHttpException) e.getCause()).toHttpResponse();
           } else {
-            throw new IllegalStateException(e.getCause());
+            e.printStackTrace();
+            response = new HttpResponseServerError();
           }
         }
 
@@ -112,7 +115,7 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
   private void extractParameters(JujubeHttpContext context, HttpRequest req, HttpEntity entity) {
     try {
       URLEncodedUtils.parse(req.getUri(), StandardCharsets.UTF_8)
-        .forEach(nvp -> context.setParameter(ParameterSource.QUERY, new TextParameter(nvp.getName(), nvp.getValue(), ContentType.TEXT_PLAIN)));
+        .forEach(nvp -> context.setParameter(ParameterSource.QUERY, new PrimitiveParameter(nvp.getName(), nvp.getValue(), ContentType.TEXT_PLAIN)));
     } catch (URISyntaxException e) {
       LOG.error("error decoding query string", e);
     }
@@ -125,14 +128,14 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
         if (ContentType.APPLICATION_FORM_URLENCODED.isSameMimeType(contentType)) {
           // TODO: need to find a better way to handle this going forward since this double memory usage
           EntityUtils.parse(entity)
-            .forEach(nvp -> context.setParameter(ParameterSource.FORM, new TextParameter(nvp.getName(), nvp.getValue(), ContentType.TEXT_PLAIN)));
+            .forEach(nvp -> context.setParameter(ParameterSource.FORM, new PrimitiveParameter(nvp.getName(), nvp.getValue(), ContentType.TEXT_PLAIN)));
         }
 
         if (ContentType.MULTIPART_FORM_DATA.isSameMimeType(contentType)) {
           var parts = ((MultipartEntity) entity).getParts();
           parts.forEach(p -> {
             if (p.isText()) {
-              context.setParameter(ParameterSource.FORM, new TextParameter(p.getName(), p.getValue(), p.getContentType()));
+              context.setParameter(ParameterSource.FORM, new PrimitiveParameter(p.getName(), p.getValue(), p.getContentType()));
             } else {
               context.setParameter(ParameterSource.FORM, new FileParameter(p.getName(), Paths.get(p.getValue()), p.getContentType(), p.getFilename()));
             }

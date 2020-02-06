@@ -3,10 +3,11 @@
 Just enough logic to turn Apache Http Core into something suited for micro services.
 
 ## Features
-* Optimized for data ingestion. You can accept large HTTP requests bodies (including multipart content) as fast as you can write to disk.   
-* Optimized for low memory and thread consumption. Targeted to operate well under heaps of only 64 MB
+* Optimized for data ingestion. You can accept large HTTP requests bodies (including multipart content) [nearly as fast as you can write to disk](https://github.com/rferreira/jujube/tree/master/jujube-benchmark).   
+* Optimized for low memory and thread consumption. Targeted to operate well under heaps of only 64 MB.
 * Security audit friendly. With minimal dependencies you are going to be less likely to be forced to upgrade due to a downstream dependency vulnerability. 
-* H2 and TLS ON by default. 
+* H2 and TLS ON by default
+* Because it is built on 
 
 ## Getting started
 ```java

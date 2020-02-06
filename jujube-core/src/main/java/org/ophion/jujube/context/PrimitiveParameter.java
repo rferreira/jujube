@@ -2,12 +2,12 @@ package org.ophion.jujube.context;
 
 import org.apache.hc.core5.http.ContentType;
 
-public class TextParameter implements Parameter {
+public class PrimitiveParameter implements Parameter {
   private final String name;
   private final String value;
   private final ContentType contentType;
 
-  public TextParameter(String name, String value, ContentType contentType) {
+  public PrimitiveParameter(String name, String value, ContentType contentType) {
     this.name = name;
     this.value = value;
     this.contentType = contentType;
@@ -29,7 +29,20 @@ public class TextParameter implements Parameter {
   }
 
   @Override
-  public String value() {
+  public String asText() {
     return value;
+  }
+
+  public int asInteger() {
+    return Integer.parseInt(value);
+  }
+
+  public float asFloat() {
+    return Float.parseFloat(value);
+  }
+
+  @Override
+  public long asLong() {
+    return Long.parseLong(value);
   }
 }

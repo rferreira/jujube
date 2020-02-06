@@ -1,13 +1,40 @@
 package org.ophion.jujube.response;
 
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.message.BasicHttpResponse;
 
-public interface JujubeHttpResponse extends org.apache.hc.core5.http.HttpResponse {
-  ContentType getContentType();
+public class JujubeHttpResponse extends BasicHttpResponse {
+  private ContentType contentType = ContentType.TEXT_PLAIN;
+  private Object content;
 
-  void setContentType(ContentType contentType);
+  public JujubeHttpResponse(int code) {
+    super(code);
+  }
 
-  Object getContent();
+  public JujubeHttpResponse() {
+    super(HttpStatus.SC_NO_CONTENT);
+  }
 
-  void setContent(Object content);
+
+  public JujubeHttpResponse(String content) {
+    super(HttpStatus.SC_OK);
+    this.content = content;
+  }
+
+  public ContentType getContentType() {
+    return this.contentType;
+  }
+
+  public void setContentType(ContentType contentType) {
+    this.contentType = contentType;
+  }
+
+  public Object getContent() {
+    return content;
+  }
+
+  public void setContent(Object content) {
+    this.content = content;
+  }
 }

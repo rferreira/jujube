@@ -41,6 +41,7 @@ public class SizeAwareEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
   @Override
   protected void data(ByteBuffer src, boolean endOfStream) throws IOException {
     buffer.write(src.array(), src.arrayOffset() + src.position(), src.remaining());
+    src.clear();
   }
 
   @Override
