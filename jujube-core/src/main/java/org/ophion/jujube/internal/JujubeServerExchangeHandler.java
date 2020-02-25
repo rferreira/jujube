@@ -16,6 +16,8 @@ import org.ophion.jujube.context.JujubeHttpContext;
 import org.ophion.jujube.context.ParameterSource;
 import org.ophion.jujube.context.PrimitiveParameter;
 import org.ophion.jujube.http.MultipartEntity;
+import org.ophion.jujube.internal.consumers.ContentAwareRequestConsumer;
+import org.ophion.jujube.internal.consumers.RequestEntityLimitExceeded;
 import org.ophion.jujube.internal.util.Loggers;
 import org.ophion.jujube.response.HttpResponseRequestTooLarge;
 import org.ophion.jujube.response.HttpResponseServerError;
@@ -48,7 +50,7 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
   protected AsyncRequestConsumer<Message<HttpRequest, HttpEntity>> supplyConsumer(HttpRequest request, EntityDetails entityDetails, HttpContext context) throws HttpException {
     LOG.debug("handling request: {}", request.toString());
 
-    return new ContentAwareRequestConsumer<>(config, entityDetails, exceptionRef);
+    return new ContentAwareRequestConsumer(config, entityDetails, exceptionRef);
   }
 
   @Override
@@ -83,7 +85,6 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
             response = new HttpResponseServerError();
           }
         }
-
       }
 
       // handling response:

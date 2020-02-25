@@ -1,4 +1,4 @@
-package org.ophion.jujube.internal;
+package org.ophion.jujube.internal.consumers;
 
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class SizeAwareEntityConsumer extends AbstractBinAsyncEntityConsumer<HttpEntity> {
+class SizeAwareEntityConsumer extends AbstractBinAsyncEntityConsumer<HttpEntity> {
   private static final Logger LOG = Loggers.build();
   private final TieredOutputStream buffer;
   private ContentType contentType;
@@ -35,7 +35,7 @@ public class SizeAwareEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
 
   @Override
   protected int capacityIncrement() {
-    return Integer.MAX_VALUE;
+    return (int) buffer.getLimit().toBytes();
   }
 
   @Override
@@ -46,6 +46,7 @@ public class SizeAwareEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
 
   @Override
   public void releaseResources() {
+    LOG.debug("releasing resources");
     try {
       buffer.close();
     } catch (IOException e) {

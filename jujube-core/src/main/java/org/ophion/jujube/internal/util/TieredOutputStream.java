@@ -144,7 +144,7 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
   }
 
   /**
-   * Returns the path of the underlying file backing this stream. If this stream has not yet spilled out to its file
+   * Returns the path of the underlying file backing this stream. If this stream has not yet spilled over to its file
    * based tier, we perform a full dump first.
    * For a more efficient way to iterate over this buffer see @{link getContentAsStream}.
    *
@@ -208,5 +208,9 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
       LOG.debug("performing fsync");
       channel.force(true);
     }
+  }
+
+  public DataSize getLimit() {
+    return limit;
   }
 }

@@ -26,6 +26,7 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -71,6 +72,8 @@ class IntegrationTest {
       .setSelectInterval(TimeValue.of(100, TimeUnit.MILLISECONDS))
       .build()
     );
+    // for testing purposes we want to shut down as quickly as possible
+    config.getServerConfig().setShutDownDelay(Duration.ZERO);
     server = new Jujube(config);
     endpoint = URIBuilder.localhost().setPort(config.getServerConfig().getListenPort()).setScheme("https").build();
   }

@@ -1,4 +1,4 @@
-package org.ophion.jujube.internal;
+package org.ophion.jujube.internal.consumers;
 
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<HttpEntity> {
+class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<HttpEntity> {
   private static final Logger LOG = Loggers.build();
   private MultipartChunkDecoder decoder;
   private ContentType contentType;
@@ -51,18 +51,20 @@ public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
   }
 
   @Override
-  protected HttpEntity generateContent() {
+  protected HttpEntity generateContent() throws IOException {
     return new MultipartEntity(Collections.unmodifiableList(parts), this.contentType, null);
   }
 
   @Override
   protected int capacityIncrement() {
+    //TODO: pull this limit from the underlying decoder|config
     return Integer.MAX_VALUE;
   }
 
   @Override
   protected void data(ByteBuffer src, boolean endOfStream) throws IOException {
     decoder.decode(src, endOfStream);
+    src.clear();
   }
 
   @Override

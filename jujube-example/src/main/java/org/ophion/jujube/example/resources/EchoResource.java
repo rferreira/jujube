@@ -16,9 +16,9 @@ public class EchoResource {
     }
 
     var param = ctx.getParameter("name", ParameterSource.FORM)
-      .orElseThrow(() -> new ClientError("visitor param is required"));
+      .orElseThrow(() -> new ClientError("name param is required"));
 
-    return new JujubeHttpResponse("Well, hello there:" + param.asText());
+    return new JujubeHttpResponse(String.format("Well, hello there: %s!\n", param.asText()));
   }
 
   public JujubeHttpResponse notFound(JujubeHttpContext ctx) {

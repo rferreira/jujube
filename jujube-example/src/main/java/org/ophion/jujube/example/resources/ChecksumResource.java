@@ -7,8 +7,8 @@ import org.ophion.jujube.context.FileParameter;
 import org.ophion.jujube.context.JujubeHttpContext;
 import org.ophion.jujube.context.ParameterSource;
 import org.ophion.jujube.http.HttpConstraints;
-import org.ophion.jujube.http.HttpResponses;
 import org.ophion.jujube.response.ClientError;
+import org.ophion.jujube.response.HttpResponses;
 import org.ophion.jujube.response.JujubeHttpResponse;
 
 import java.io.BufferedInputStream;
@@ -16,26 +16,46 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * Sample resource that calculates the checksum of a file.
+ * <p>
+ * $ curl -F "file=@/Users/rafael/Downloads/output.pdf" -vk https://localhost:8080/checksum/
  */
 public class ChecksumResource {
   public JujubeHttpResponse post(JujubeHttpContext ctx) throws NoSuchAlgorithmException, IOException {
     HttpConstraints.onlyAllowMediaType(ContentType.MULTIPART_FORM_DATA, ctx);
-    HttpConstraints.onlyAllowMethod(Method.POST, ctx);
+
+    if (Method.GET.isSame(ctx.getRequest().getMethod())) {
+      var availableHashes = Arrays.stream(Security.getProviders())
+        .flatMap(provider -> provider.getServices().stream())
+        .filter(s -> MessageDigest.class.getSimpleName().equals(s.getType()))
+        .map(Provider.Service::getAlgorithm)
+        .collect(Collectors.joining(","));
+
+      var resp = String.format("Checksum calculating resource, please send us a file, and an optional hash to use. Available hashes: %s",
+        availableHashes);
+      return HttpResponses.ok(resp);
+    }
 
     var file = (FileParameter) ctx.getParameter("file", ParameterSource.FORM)
       .orElseThrow(() -> new ClientError("Oops, you must supply a file argument"));
 
-    var hash = ctx.getParameter("file", ParameterSource.FORM);
+    var hash = ctx.getParameter("hash", ParameterSource.FORM);
+    var digest = MessageDigest.getInstance("SHA-256");
 
-    var digest = MessageDigest.getInstance("sha256");
+    try {
+      if (hash.isPresent()) {
+        digest = MessageDigest.getInstance(hash.get().asText());
+      }
 
-    if (hash.isPresent()) {
-      digest = MessageDigest.getInstance(hash.get().asText());
+    } catch (NoSuchAlgorithmException ex) {
+      return HttpResponses.badRequest(String.format("error: %s \n", ex.getMessage()));
     }
-
     try (var ins = new BufferedInputStream(Files.newInputStream(file.asPath()))) {
       while (ins.available() > 0) {
         digest.update((byte) ins.read());
@@ -43,6 +63,8 @@ public class ChecksumResource {
     }
 
     var checksum = Hex.encodeHexString(digest.digest());
-    return HttpResponses.ok(String.format("checksum: %s", checksum));
+    return HttpResponses.ok(String.format("checksum:%s \n", checksum));
+
+
   }
 }

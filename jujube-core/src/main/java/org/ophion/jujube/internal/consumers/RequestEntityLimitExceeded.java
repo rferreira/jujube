@@ -1,4 +1,4 @@
-package org.ophion.jujube.internal;
+package org.ophion.jujube.internal.consumers;
 
 import org.apache.hc.core5.http.HttpException;
 

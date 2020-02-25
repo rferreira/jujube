@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Just enough logic to turn Apache Http Core into something suited for micro services
@@ -58,6 +57,14 @@ public class Jujube {
         .setCanonicalHostName(config.getServerConfig().getCanonicalHostName())
         .setVersionPolicy(config.getServerConfig().getVersionPolicy());
 
+      if (config.getServerConfig().getH2StreamListener() != null) {
+        bootstrap.setStreamListener(config.getServerConfig().getH2StreamListener());
+      }
+
+      if (config.getServerConfig().getHttp1StreamListener() != null) {
+        bootstrap.setStreamListener(config.getServerConfig().getHttp1StreamListener());
+      }
+
       config.routes()
         .forEach((k, v) -> bootstrap.register(k, () -> new JujubeServerExchangeHandler(config, v)));
 
@@ -83,11 +90,18 @@ public class Jujube {
   }
 
   public void stop() {
-    System.out.println("> HTTP server is shutting down, awaiting in-flight requests...");
-    instance.close(CloseMode.GRACEFUL);
-    instance.initiateShutdown();
+    var shutdownDelay = config.getServerConfig().getShutDownDelay();
+    System.out.println(String.format("> HTTP server is shutting down, awaiting %s for in-flight requests...", Durations.humanize(shutdownDelay)));
     try {
-      instance.awaitShutdown(TimeValue.of(100, TimeUnit.MILLISECONDS));
+      if (shutdownDelay.isZero()) {
+        instance.close(CloseMode.IMMEDIATE);
+        instance.initiateShutdown();
+        instance.awaitShutdown(TimeValue.ZERO_MILLISECONDS);
+      } else {
+        instance.close(CloseMode.GRACEFUL);
+        instance.initiateShutdown();
+        instance.awaitShutdown(TimeValue.ofMilliseconds(shutdownDelay.toMillis()));
+      }
     } catch (InterruptedException e) {
       throw new IllegalStateException(e);
     }

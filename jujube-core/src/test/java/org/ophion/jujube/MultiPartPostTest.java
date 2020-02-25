@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class MultiPartPostTest extends IntegrationTest {
   private static final Logger LOG = Loggers.build();
@@ -53,11 +54,13 @@ class MultiPartPostTest extends IntegrationTest {
   @Test
   void shouldStreamLargeFiles() throws IOException {
     var size = DataSize.megabytes(10);
+    AtomicInteger counter = new AtomicInteger();
     config.route("/post", ctx -> {
       try {
         var file = (FileParameter) ctx.getParameter("file", ParameterSource.FORM).orElseThrow();
         long bytes = Files.size(file.asPath());
         Assertions.assertEquals(size.toBytes(), bytes);
+        counter.incrementAndGet();
       } catch (IOException e) {
         throw new IllegalStateException(e);
       }
@@ -80,5 +83,7 @@ class MultiPartPostTest extends IntegrationTest {
       Assertions.assertEquals(200, response.getCode());
       return true;
     });
+
+    Assertions.assertEquals(1, counter.get());
   }
 }

@@ -1,5 +1,5 @@
 # Benchmark Module
-All tests run in a 2017 MacBook Pro 13" with 16GB of RAM and AdoptOpenJDK 11.0.3+7.
+All tests run in a 2017 MacBook Pro 13" with 16GB of RAM, NVME storage and AdoptOpenJDK 11.0.3+7.
 All tests had a max heap setting (-xmx) of only 64MB. 
 
 ## Results

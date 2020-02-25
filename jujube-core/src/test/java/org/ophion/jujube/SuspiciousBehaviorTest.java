@@ -61,10 +61,8 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
   @Test
   void shouldLimitPostSizeByContentLength() throws IOException {
     config.route("/post", ctx -> {
-      Assertions.assertFalse(ctx.getParameter("file", ParameterSource.FORM).isPresent());
-      var response = new JujubeHttpResponse("w00t");
-      response.setCode(200);
-      return response;
+      Assertions.fail("request should not be processed");
+      return null;
     });
 
     config.getServerConfig().setRequestEntityLimit(DataSize.bytes(0));
