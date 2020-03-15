@@ -6,9 +6,11 @@ import org.apache.hc.core5.io.CloseMode;
 import org.apache.hc.core5.reactor.ListenerEndpoint;
 import org.apache.hc.core5.util.TimeValue;
 import org.ophion.jujube.config.JujubeConfig;
+import org.ophion.jujube.internal.JujubeAssetsServerExchangeHandler;
 import org.ophion.jujube.internal.JujubeServerExchangeHandler;
 import org.ophion.jujube.internal.util.Durations;
 import org.ophion.jujube.internal.util.Loggers;
+import org.ophion.jujube.route.StaticAssetRouterHandler;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -68,7 +70,12 @@ public class Jujube {
       config.routes()
         .forEach((path, handler) -> {
           LOG.info("adding route: {} -> {}", path, handler);
-          bootstrap.register(path, () -> new JujubeServerExchangeHandler(config, handler));
+          if (handler instanceof StaticAssetRouterHandler) {
+            var staticHandler = (StaticAssetRouterHandler) handler;
+            bootstrap.register(path, () -> new JujubeAssetsServerExchangeHandler(config, path, staticHandler.getResourcePathPrefix(), staticHandler.getIndexFile()));
+          } else {
+            bootstrap.register(path, () -> new JujubeServerExchangeHandler(config, handler));
+          }
         });
 
       this.instance = bootstrap.create();

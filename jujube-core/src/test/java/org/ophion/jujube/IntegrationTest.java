@@ -56,7 +56,7 @@ class IntegrationTest {
       client = HttpClients.custom()
         .disableAutomaticRetries()
         .setDefaultRequestConfig(RequestConfig.custom()
-          .setResponseTimeout(1, TimeUnit.SECONDS)
+          .setResponseTimeout(60, TimeUnit.SECONDS)
           .setConnectTimeout(1, TimeUnit.SECONDS)
           .build())
         .setConnectionManager(cm)
