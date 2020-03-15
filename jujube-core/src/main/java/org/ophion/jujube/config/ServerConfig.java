@@ -27,6 +27,9 @@ import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Configures the underlying Apache HttpCore server.
+ */
 public class ServerConfig {
   private IOReactorConfig ioReactorConfig;
   private H2Config h2Config = H2Config.DEFAULT;

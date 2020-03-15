@@ -3,13 +3,14 @@ package org.ophion.jujube.example.resources;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Method;
-import org.ophion.jujube.context.FileParameter;
-import org.ophion.jujube.context.JujubeHttpContext;
-import org.ophion.jujube.context.ParameterSource;
+import org.apache.hc.core5.http.protocol.HttpContext;
 import org.ophion.jujube.http.HttpConstraints;
+import org.ophion.jujube.request.FileParameter;
+import org.ophion.jujube.request.JujubeRequest;
+import org.ophion.jujube.request.ParameterSource;
 import org.ophion.jujube.response.ClientError;
 import org.ophion.jujube.response.HttpResponses;
-import org.ophion.jujube.response.JujubeHttpResponse;
+import org.ophion.jujube.response.JujubeResponse;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -27,10 +28,10 @@ import java.util.stream.Collectors;
  * $ curl -F "file=@/Users/rafael/Downloads/output.pdf" -vk https://localhost:8080/checksum/
  */
 public class ChecksumResource {
-  public JujubeHttpResponse post(JujubeHttpContext ctx) throws NoSuchAlgorithmException, IOException {
-    HttpConstraints.onlyAllowMediaType(ContentType.MULTIPART_FORM_DATA, ctx);
+  public JujubeResponse post(JujubeRequest req, HttpContext ctx) throws NoSuchAlgorithmException, IOException {
+    HttpConstraints.onlyAllowMediaType(ContentType.MULTIPART_FORM_DATA, req);
 
-    if (Method.GET.isSame(ctx.getRequest().getMethod())) {
+    if (Method.GET.isSame(req.getMethod())) {
       var availableHashes = Arrays.stream(Security.getProviders())
         .flatMap(provider -> provider.getServices().stream())
         .filter(s -> MessageDigest.class.getSimpleName().equals(s.getType()))
@@ -42,10 +43,10 @@ public class ChecksumResource {
       return HttpResponses.ok(resp);
     }
 
-    var file = (FileParameter) ctx.getParameter("file", ParameterSource.FORM)
+    var file = (FileParameter) req.getParameter("file", ParameterSource.FORM)
       .orElseThrow(() -> new ClientError("Oops, you must supply a file argument"));
 
-    var hash = ctx.getParameter("hash", ParameterSource.FORM);
+    var hash = req.getParameter("hash", ParameterSource.FORM);
     var digest = MessageDigest.getInstance("SHA-256");
 
     try {

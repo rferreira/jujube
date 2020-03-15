@@ -5,10 +5,10 @@ import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.core5.http.HttpEntity;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.ophion.jujube.context.FileParameter;
-import org.ophion.jujube.context.ParameterSource;
 import org.ophion.jujube.internal.util.Loggers;
-import org.ophion.jujube.response.JujubeHttpResponse;
+import org.ophion.jujube.request.FileParameter;
+import org.ophion.jujube.request.ParameterSource;
+import org.ophion.jujube.response.JujubeResponse;
 import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.util.RepeatingInputStream;
 import org.slf4j.Logger;
@@ -22,17 +22,17 @@ class MultiPartPostTest extends IntegrationTest {
 
   @Test
   void shouldHandleMultiPartFormPosts() throws IOException {
-    config.route("/post", (ctx) -> {
+    config.route("/post", (req, ctx) -> {
       LOG.info("here");
-      Assertions.assertEquals("value1", ctx.getParameter("text1", ParameterSource.FORM).orElseThrow().asText());
+      Assertions.assertEquals("value1", req.getParameter("text1", ParameterSource.FORM).orElseThrow().asText());
       try {
-        var param = (FileParameter) (ctx.getParameter("file", ParameterSource.FORM).orElseThrow());
+        var param = (FileParameter) (req.getParameter("file", ParameterSource.FORM).orElseThrow());
         Assertions.assertArrayEquals("00000".getBytes(), Files.readAllBytes(param.asPath()));
       } catch (IOException e) {
         throw new IllegalStateException(e);
       }
 
-      return new JujubeHttpResponse("w00t");
+      return new JujubeResponse("w00t");
     });
 
     server.start();
@@ -55,9 +55,9 @@ class MultiPartPostTest extends IntegrationTest {
   void shouldStreamLargeFiles() throws IOException {
     var size = DataSize.megabytes(10);
     AtomicInteger counter = new AtomicInteger();
-    config.route("/post", ctx -> {
+    config.route("/post", (req, ctx) -> {
       try {
-        var file = (FileParameter) ctx.getParameter("file", ParameterSource.FORM).orElseThrow();
+        var file = (FileParameter) req.getParameter("file", ParameterSource.FORM).orElseThrow();
         long bytes = Files.size(file.asPath());
         Assertions.assertEquals(size.toBytes(), bytes);
         counter.incrementAndGet();
@@ -65,7 +65,7 @@ class MultiPartPostTest extends IntegrationTest {
         throw new IllegalStateException(e);
       }
 
-      return new JujubeHttpResponse("w00t");
+      return new JujubeResponse("w00t");
     });
 
     server.start();

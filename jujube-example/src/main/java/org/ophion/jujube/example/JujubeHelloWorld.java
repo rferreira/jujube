@@ -4,7 +4,7 @@ import org.ophion.jujube.Jujube;
 import org.ophion.jujube.config.JujubeConfig;
 import org.ophion.jujube.example.resources.ChecksumResource;
 import org.ophion.jujube.example.resources.EchoResource;
-import org.ophion.jujube.response.JujubeHttpResponse;
+import org.ophion.jujube.response.JujubeResponse;
 
 public class JujubeHelloWorld {
   public static void main(String[] args) throws InterruptedException {
@@ -17,8 +17,8 @@ public class JujubeHelloWorld {
     ChecksumResource checksumResource = new ChecksumResource();
     config.route("/checksum/*", checksumResource::post);
     // catch all:
-    config.route("/*", ctx -> {
-      return new JujubeHttpResponse("Hello world from Jujube!");
+    config.route("/*", (req, ctx) -> {
+      return new JujubeResponse("Hello world from Jujube!");
     });
 
     Jujube server = new Jujube(config);

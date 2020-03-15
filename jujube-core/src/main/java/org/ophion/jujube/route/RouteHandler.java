@@ -1,9 +1,10 @@
 package org.ophion.jujube.route;
 
-import org.ophion.jujube.context.JujubeHttpContext;
-import org.ophion.jujube.response.JujubeHttpResponse;
+import org.apache.hc.core5.http.protocol.HttpContext;
+import org.ophion.jujube.request.JujubeRequest;
+import org.ophion.jujube.response.JujubeResponse;
 
 @FunctionalInterface
 public interface RouteHandler {
-  JujubeHttpResponse handle(JujubeHttpContext ctx) throws Exception;
+  JujubeResponse handle(JujubeRequest req, HttpContext ctx) throws Exception;
 }

@@ -4,11 +4,9 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.entity.EntityBuilder;
 import org.apache.hc.core5.http.HttpStatus;
-import org.apache.hc.core5.http.ParseException;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.ophion.jujube.response.JujubeHttpResponse;
+import org.ophion.jujube.response.JujubeResponse;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,11 +24,9 @@ class JujubeTest extends IntegrationTest {
   @Test
   void shouldRouteRequests() throws IOException {
     AtomicInteger counter = new AtomicInteger();
-    config.route("/hello", (ctx) -> {
-      var response = new JujubeHttpResponse("w00t");
-      response.setCode(207);
+    config.route("/hello", (req, ctx) -> {
       counter.incrementAndGet();
-      return response;
+      return new JujubeResponse(207, "w00t");
     });
 
     server.start();
@@ -75,13 +71,10 @@ class JujubeTest extends IntegrationTest {
       "}";
 
     AtomicInteger counter = new AtomicInteger();
-    config.route("/hello", (ctx) -> {
-      var response = new JujubeHttpResponse();
-      try {
-        Assertions.assertEquals(contents, EntityUtils.toString(ctx.getEntity().orElseThrow()));
-      } catch (IOException | ParseException e) {
-        Assertions.fail(e);
-      }
+    config.route("/hello", (req, ctx) -> {
+      var response = new JujubeResponse();
+      var entity = req.getHttpEntity().orElseThrow();
+      Assertions.assertEquals(contents, new String(entity.getContent().readAllBytes()));
       counter.incrementAndGet();
       return response;
     });

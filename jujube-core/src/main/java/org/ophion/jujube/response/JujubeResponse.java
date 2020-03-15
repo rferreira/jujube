@@ -4,21 +4,31 @@ import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.message.BasicHttpResponse;
 
-public class JujubeHttpResponse extends BasicHttpResponse {
+public class JujubeResponse extends BasicHttpResponse {
   private ContentType contentType = ContentType.TEXT_PLAIN;
   private Object content;
 
-  public JujubeHttpResponse(int code) {
+  public JujubeResponse() {
+    this(HttpStatus.SC_NO_CONTENT);
+  }
+
+  public JujubeResponse(Object content) {
+    this(HttpStatus.SC_OK);
+    this.content = content;
+  }
+
+  public JujubeResponse(int code) {
     super(code);
   }
 
-  public JujubeHttpResponse() {
-    super(HttpStatus.SC_NO_CONTENT);
+  public JujubeResponse(int code, Object content) {
+    this(code);
+    this.content = content;
   }
 
-
-  public JujubeHttpResponse(String content) {
-    super(HttpStatus.SC_OK);
+  public JujubeResponse(int code, Object content, ContentType contentType) {
+    this(code);
+    this.contentType = contentType;
     this.content = content;
   }
 

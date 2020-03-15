@@ -46,7 +46,7 @@ public class Jujube {
       final var banner = Files.readString(Paths.get(Objects.requireNonNull(Jujube.class.getClassLoader().getResource("banner.txt")).toURI()));
       System.out.println(banner);
 
-      var bootstrap = H2ServerBootstrap.bootstrap()
+      final var bootstrap = H2ServerBootstrap.bootstrap()
         .setH2Config(config.getServerConfig().getH2Config())
         .setHttp1Config(config.getServerConfig().getHttp1Config())
         .setTlsStrategy(config.getServerConfig().getTlsStrategy())
@@ -66,7 +66,10 @@ public class Jujube {
       }
 
       config.routes()
-        .forEach((k, v) -> bootstrap.register(k, () -> new JujubeServerExchangeHandler(config, v)));
+        .forEach((path, handler) -> {
+          LOG.info("adding route: {} -> {}", path, handler);
+          bootstrap.register(path, () -> new JujubeServerExchangeHandler(config, handler));
+        });
 
       this.instance = bootstrap.create();
 

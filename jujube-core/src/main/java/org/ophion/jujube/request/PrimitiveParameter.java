@@ -1,4 +1,4 @@
-package org.ophion.jujube.context;
+package org.ophion.jujube.request;
 
 import org.apache.hc.core5.http.ContentType;
 
@@ -6,11 +6,13 @@ public class PrimitiveParameter implements Parameter {
   private final String name;
   private final String value;
   private final ContentType contentType;
+  private final ParameterSource source;
 
-  public PrimitiveParameter(String name, String value, ContentType contentType) {
+  public PrimitiveParameter(ParameterSource source, String name, String value, ContentType contentType) {
     this.name = name;
     this.value = value;
     this.contentType = contentType;
+    this.source = source;
   }
 
   @Override
@@ -44,5 +46,10 @@ public class PrimitiveParameter implements Parameter {
   @Override
   public long asLong() {
     return Long.parseLong(value);
+  }
+
+  @Override
+  public ParameterSource source() {
+    return source;
   }
 }

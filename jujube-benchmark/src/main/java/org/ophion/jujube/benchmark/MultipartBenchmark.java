@@ -16,7 +16,7 @@ import org.apache.hc.core5.ssl.SSLContexts;
 import org.openjdk.jmh.annotations.*;
 import org.ophion.jujube.Jujube;
 import org.ophion.jujube.config.JujubeConfig;
-import org.ophion.jujube.response.JujubeHttpResponse;
+import org.ophion.jujube.response.JujubeResponse;
 import org.ophion.jujube.util.DataSize;
 
 import javax.net.ssl.SSLContext;
@@ -78,7 +78,7 @@ public class MultipartBenchmark {
         .build();
 
       var config = new JujubeConfig();
-      config.route("/*", ctx -> new JujubeHttpResponse(200));
+      config.route("/*", (req, ctx) -> new JujubeResponse(200));
       server = new Jujube(config);
 
       this.endpoint = URIBuilder.localhost().setPort(config.getServerConfig().getListenPort()).setScheme("https").build();

@@ -9,7 +9,7 @@ class JSONTest {
   @Test
   void shouldConvertToJson() {
     var json = JSON.stringify(Map.of("name", "Bob", "color", "blue"));
-    Assertions.assertEquals("abc", json);
+    Assertions.assertEquals("{\"color\":\"blue\", \"name\":\"Bob\"}", json);
   }
 
   @Test

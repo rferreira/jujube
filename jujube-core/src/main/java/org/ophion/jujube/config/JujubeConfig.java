@@ -8,11 +8,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
 public class JujubeConfig {
-  private final ServerConfig serverConfig = new ServerConfig();
-  private ExecutorService executorService = ForkJoinPool.commonPool();
-  private Map<String, RouteHandler> routes = new LinkedHashMap<>();
-
+  private final ServerConfig serverConfig;
+  private final Map<String, RouteHandler> routes;
+  private ExecutorService executorService;
+  
   public JujubeConfig() {
+    this.routes = new LinkedHashMap<>();
+    this.executorService = ForkJoinPool.commonPool();
+    this.serverConfig = new ServerConfig();
   }
 
   public ExecutorService getExecutorService() {

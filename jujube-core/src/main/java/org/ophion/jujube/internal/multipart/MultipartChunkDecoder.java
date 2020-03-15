@@ -219,7 +219,8 @@ public class MultipartChunkDecoder implements AutoCloseable {
           // resetting accumulator
           currentPartBodyAccumulator = null;
 
-          // now we need to assess if we're reach the end body or final delimiter, we do that by looking at the next 2 bytes:
+          // now we need to assess if we've reached the end body or final delimiter,
+          // we do that by looking at the next 2 bytes:
           var currentSegmentEndIndex = contents.position() + currentDelimiter.length - 1;
           var hasReachedFinalDelimiter = Arrays.equals(
             contents.array(), currentSegmentEndIndex, currentSegmentEndIndex + TWO_DASHES_CRLF.length - 1,
