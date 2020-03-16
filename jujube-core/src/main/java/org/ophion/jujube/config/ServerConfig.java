@@ -48,7 +48,7 @@ public class ServerConfig {
 
   public ServerConfig() {
     this.ioReactorConfig = IOReactorConfig.custom()
-      .setSoReuseAddress(true)
+      .setSoReuseAddress(true) // helps with java.net.BindException
       .setSoTimeout(Timeout.of(30, TimeUnit.SECONDS))
       .build();
 
