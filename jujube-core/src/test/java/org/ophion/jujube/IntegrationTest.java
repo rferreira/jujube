@@ -1,6 +1,7 @@
 package org.ophion.jujube;
 
 import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
@@ -22,10 +23,10 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -54,6 +55,10 @@ class IntegrationTest {
 
       client = HttpClients.custom()
         .disableAutomaticRetries()
+        .setDefaultRequestConfig(RequestConfig.custom()
+          .setResponseTimeout(60, TimeUnit.SECONDS)
+          .setConnectTimeout(1, TimeUnit.SECONDS)
+          .build())
         .setConnectionManager(cm)
         .build();
     } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
@@ -62,7 +67,7 @@ class IntegrationTest {
   }
 
   @BeforeEach
-  void setUp() throws UnknownHostException, URISyntaxException {
+  void setUp() throws URISyntaxException {
     LOG.debug("creating server");
     config = new JujubeConfig();
     config.getServerConfig().setListenPort(new Random().nextInt(1_000) + 8_000);
@@ -71,8 +76,10 @@ class IntegrationTest {
       .setSelectInterval(TimeValue.of(100, TimeUnit.MILLISECONDS))
       .build()
     );
+    // for testing purposes we want to shut down as quickly as possible
+    config.getServerConfig().setShutDownDelay(Duration.ZERO);
     server = new Jujube(config);
-    endpoint = URIBuilder.localhost().setPort(config.getServerConfig().getListenPort()).setScheme("https").build();
+    endpoint = URIBuilder.loopbackAddress().setPort(config.getServerConfig().getListenPort()).setScheme("https").build();
   }
 
   @AfterEach

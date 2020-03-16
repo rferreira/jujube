@@ -13,7 +13,7 @@ public class TieredOutputStreamBenchmark {
   public void measureWriteSpeed(BenchmarkState state) throws IOException {
     var totalSize = DataSize.megabytes(1);
     try (var out = new TieredOutputStream(DataSize.bytes(state.bufferSizeInBytes), totalSize)) {
-      new JunkInputStream(totalSize.toBytes()).transferTo(out);
+      new RepeatingInputStream(totalSize.toBytes()).transferTo(out);
       out.flush();
     }
   }

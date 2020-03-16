@@ -1,4 +1,4 @@
-package org.ophion.jujube.context;
+package org.ophion.jujube.request;
 
 import org.apache.hc.core5.http.ContentType;
 
@@ -9,5 +9,13 @@ public interface Parameter {
 
   String name();
 
-  String value();
+  String asText();
+
+  int asInteger();
+
+  float asFloat();
+
+  long asLong();
+
+  ParameterSource source();
 }

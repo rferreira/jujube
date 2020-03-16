@@ -3,23 +3,22 @@ package org.ophion.jujube.response;
 import org.apache.hc.core5.http.HttpResponse;
 
 public class JujubeHttpException extends RuntimeException {
-  private final int code;
-  private String message;
+  private final JujubeResponse response;
+
+  public JujubeHttpException(JujubeResponse resp) {
+    this.response = resp;
+  }
 
   public JujubeHttpException(int code) {
-    this.code = code;
+    this.response = new JujubeResponse(code);
   }
 
   public JujubeHttpException(int code, String message) {
-    this.code = code;
-    this.message = message;
+    this.response = new JujubeResponse(code);
+    this.response.setContent(message);
   }
 
   public HttpResponse toHttpResponse() {
-    var resp = new org.ophion.jujube.response.HttpResponse(this.code);
-    if (this.message != null) {
-      resp.setContent(message);
-    }
-    return resp;
+    return this.response;
   }
 }

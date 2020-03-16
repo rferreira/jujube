@@ -11,12 +11,14 @@
   <modules>
     <module>jujube-benchmark</module>
     <module>jujube-core</module>
+    <module>jujube-example</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>3.0.0-M4</maven.surefire.plugin.version>
+    <httpComponentsCore.version>5.0</httpComponentsCore.version>
   </properties>
   <build>
     <plugins>

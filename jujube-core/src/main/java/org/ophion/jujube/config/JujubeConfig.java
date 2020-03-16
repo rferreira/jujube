@@ -1,18 +1,28 @@
 package org.ophion.jujube.config;
 
-import org.ophion.jujube.context.JujubeHttpContext;
-import org.ophion.jujube.response.JujubeHttpResponse;
+import org.ophion.jujube.route.RouteHandler;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
-import java.util.function.Function;
 
 public class JujubeConfig {
-  private final ServerConfig serverConfig = new ServerConfig();
-  private ExecutorService executorService = ForkJoinPool.commonPool();
-  private Map<String, Function<JujubeHttpContext, JujubeHttpResponse>> routes = new LinkedHashMap<>();
+  private final ServerConfig serverConfig;
+  private final Map<String, RouteHandler> routes;
+  private final StaticAssetsConfig staticAssetsConfig;
+  private ExecutorService executorService;
+  private Charset defaultCharset;
+
+  public JujubeConfig() {
+    this.routes = new LinkedHashMap<>();
+    this.executorService = ForkJoinPool.commonPool();
+    this.serverConfig = new ServerConfig();
+    this.staticAssetsConfig = new StaticAssetsConfig();
+    this.defaultCharset = StandardCharsets.UTF_8;
+  }
 
   public ExecutorService getExecutorService() {
     return executorService;
@@ -26,14 +36,23 @@ public class JujubeConfig {
     return serverConfig;
   }
 
-  public void route(String uriPattern, Function<JujubeHttpContext, JujubeHttpResponse> handler) {
+  public void route(String uriPattern, RouteHandler handler) {
     this.routes.put(uriPattern, handler);
   }
 
-  public Map<String, Function<JujubeHttpContext, JujubeHttpResponse>> routes() {
+  public Map<String, RouteHandler> routes() {
     return routes;
   }
 
-  public JujubeConfig() {
+  public Charset getDefaultCharset() {
+    return defaultCharset;
+  }
+
+  public void setDefaultCharset(Charset defaultCharset) {
+    this.defaultCharset = defaultCharset;
+  }
+
+  public StaticAssetsConfig getStaticAssetsConfig() {
+    return staticAssetsConfig;
   }
 }

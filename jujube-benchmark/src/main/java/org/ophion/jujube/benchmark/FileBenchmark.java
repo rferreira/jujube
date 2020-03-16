@@ -18,7 +18,7 @@ public class FileBenchmark {
 
   @Benchmark
   public void measureWriteSpeedBuffered(BenchmarkState state) throws IOException {
-    var ins = new JunkInputStream(DataSize.megabytes(state.payloadInMB).toBytes());
+    var ins = new RepeatingInputStream(DataSize.megabytes(state.payloadInMB).toBytes());
     var ous = new BufferedOutputStream(Files.newOutputStream(state.fd, StandardOpenOption.TRUNCATE_EXISTING));
 
     int b;
@@ -27,6 +27,7 @@ public class FileBenchmark {
     }
   }
 
+  // this is just too slow to be worth running:
 //  @Benchmark
 //  public void measureWriteSpeedUnbuffered(BenchmarkState state) throws IOException {
 //    var ins = new JunkInputStream(DataSize.megabytes(state.payloadInMB).toBytes());
@@ -39,24 +40,28 @@ public class FileBenchmark {
 
   @Benchmark
   public void measureWriteSpeedFileChannel(BenchmarkState state) throws IOException {
-    var ins = new JunkInputStream(DataSize.megabytes(state.payloadInMB).toBytes());
+    var ins = new RepeatingInputStream(DataSize.megabytes(state.payloadInMB).toBytes());
     var fileChannel = new RandomAccessFile(state.fd.toFile(), "rw").getChannel();
 
-    byte[] buffer = new byte[8 * 1024];
-    while ((ins.read(buffer)) > 0) {
-      fileChannel.write(ByteBuffer.wrap(buffer));
+    // using some small chunks:
+    ByteBuffer chunk = ByteBuffer.allocate(8192);
+    try (var chan = Channels.newChannel(ins)) {
+      while (chan.read(chunk) > 0) {
+        chunk.flip();
+        fileChannel.write(chunk);
+        chunk.clear();
+      }
     }
-    fileChannel.force(true);
   }
 
   @Benchmark
   public void measureWriteSpeedFileChannelTransferTo(BenchmarkState state) throws IOException {
-    var ins = new JunkInputStream(DataSize.megabytes(state.payloadInMB).toBytes());
+    var ins = new RepeatingInputStream(DataSize.megabytes(state.payloadInMB).toBytes());
     var fileChannel = new RandomAccessFile(state.fd.toFile(), "rw").getChannel();
 
-    var chan = Channels.newChannel(ins);
-    fileChannel.transferFrom(chan, 0, DataSize.megabytes(state.payloadInMB).toBytes());
-    fileChannel.force(true);
+    try (var chan = Channels.newChannel(ins)) {
+      fileChannel.transferFrom(chan, 0, DataSize.megabytes(state.payloadInMB).toBytes());
+    }
   }
 
 

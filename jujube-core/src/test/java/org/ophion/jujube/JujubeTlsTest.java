@@ -3,7 +3,7 @@ package org.ophion.jujube;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.ophion.jujube.response.HttpResponse;
+import org.ophion.jujube.response.JujubeResponse;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,8 +12,8 @@ public class JujubeTlsTest extends IntegrationTest {
   @Test
   void shouldAllowUsersToDisable() throws IOException {
     AtomicInteger counter = new AtomicInteger();
-    config.route("/hello", (ctx) -> {
-      var response = new HttpResponse("w00t");
+    config.route("/hello", (req, ctx) -> {
+      var response = new JujubeResponse("w00t");
       response.setCode(207);
       counter.incrementAndGet();
       return response;
@@ -35,8 +35,8 @@ public class JujubeTlsTest extends IntegrationTest {
   void shouldEnableTlsWithSelfSignedCert() throws IOException {
 
     AtomicInteger counter = new AtomicInteger();
-    config.route("/hello", (ctx) -> {
-      var response = new HttpResponse("w00t");
+    config.route("/hello", (req, ctx) -> {
+      var response = new JujubeResponse("w00t");
       response.setCode(207);
       counter.incrementAndGet();
       return response;

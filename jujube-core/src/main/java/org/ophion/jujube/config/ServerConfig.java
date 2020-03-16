@@ -3,6 +3,7 @@ package org.ophion.jujube.config;
 import org.apache.hc.core5.function.Callback;
 import org.apache.hc.core5.function.Supplier;
 import org.apache.hc.core5.http.config.Http1Config;
+import org.apache.hc.core5.http.impl.Http1StreamListener;
 import org.apache.hc.core5.http.nio.AsyncServerExchangeHandler;
 import org.apache.hc.core5.http.nio.ssl.BasicServerTlsStrategy;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
@@ -10,6 +11,7 @@ import org.apache.hc.core5.http.protocol.LookupRegistry;
 import org.apache.hc.core5.http.protocol.UriPatternOrderedMatcher;
 import org.apache.hc.core5.http2.HttpVersionPolicy;
 import org.apache.hc.core5.http2.config.H2Config;
+import org.apache.hc.core5.http2.impl.nio.H2StreamListener;
 import org.apache.hc.core5.http2.ssl.H2ServerTlsStrategy;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
@@ -22,8 +24,12 @@ import org.ophion.jujube.util.DataSize;
 import javax.net.ssl.SSLContext;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Configures the underlying Apache HttpCore server.
+ */
 public class ServerConfig {
   private IOReactorConfig ioReactorConfig;
   private H2Config h2Config = H2Config.DEFAULT;
@@ -36,6 +42,9 @@ public class ServerConfig {
   private TlsStrategy tlsStrategy;
   private String canonicalHostName;
   private Http1Config http1Config = Http1Config.DEFAULT;
+  private H2StreamListener h2StreamListener;
+  private Http1StreamListener http1StreamListener;
+  private Duration shutDownDelay = Duration.ofMillis(100);
 
   public ServerConfig() {
     this.ioReactorConfig = IOReactorConfig.custom()
@@ -65,6 +74,22 @@ public class ServerConfig {
     } catch (Exception e) {
       throw new IllegalArgumentException(e);
     }
+  }
+
+  public H2StreamListener getH2StreamListener() {
+    return h2StreamListener;
+  }
+
+  public void setH2StreamListener(H2StreamListener h2StreamListener) {
+    this.h2StreamListener = h2StreamListener;
+  }
+
+  public Http1StreamListener getHttp1StreamListener() {
+    return http1StreamListener;
+  }
+
+  public void setHttp1StreamListener(Http1StreamListener http1StreamListener) {
+    this.http1StreamListener = http1StreamListener;
   }
 
   public DataSize getRequestEntityLimit() {
@@ -157,5 +182,13 @@ public class ServerConfig {
 
   public void setHttp1Config(Http1Config http1Config) {
     this.http1Config = http1Config;
+  }
+
+  public Duration getShutDownDelay() {
+    return shutDownDelay;
+  }
+
+  public void setShutDownDelay(Duration shutDownDelay) {
+    this.shutDownDelay = shutDownDelay;
   }
 }

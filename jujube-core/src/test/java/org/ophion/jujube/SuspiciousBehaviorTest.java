@@ -5,25 +5,25 @@ import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
-import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.TimeValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.ophion.jujube.context.FileParameter;
-import org.ophion.jujube.context.ParameterSource;
 import org.ophion.jujube.internal.util.Loggers;
-import org.ophion.jujube.response.HttpResponse;
+import org.ophion.jujube.request.FileParameter;
+import org.ophion.jujube.request.ParameterSource;
+import org.ophion.jujube.response.JujubeResponse;
 import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.util.RandomInputStream;
+import org.ophion.jujube.util.RepeatingInputStream;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class SuspiciousBehaviorTest extends IntegrationTest {
   private static final Logger LOG = Loggers.build();
@@ -31,18 +31,15 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
   @Test
   void shouldLimitPostSize() throws IOException {
     var size = DataSize.megabytes(2);
-    config.route("/post", ctx -> {
+    config.route("/post", (req, ctx) -> {
       try {
-        var file = (FileParameter) ctx.getParameter("file", ParameterSource.FORM).orElseThrow();
+        var file = (FileParameter) req.getParameter("file", ParameterSource.FORM).orElseThrow();
         long bytes = Files.size(file.asPath());
         Assertions.assertEquals(size.toBytes(), bytes);
       } catch (IOException e) {
         throw new IllegalStateException(e);
       }
-
-      var response = new HttpResponse("w00t");
-      response.setCode(200);
-      return response;
+      return new JujubeResponse("w00t");
     });
 
     config.getServerConfig().setRequestEntityLimit(DataSize.megabytes(1));
@@ -50,7 +47,7 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
 
     HttpEntity entity = MultipartEntityBuilder
       .create()
-      .addBinaryBody("file", new RandomInputStream(size.toBytes()))
+      .addBinaryBody("file", new RepeatingInputStream(size.toBytes()))
       .build();
 
     var request = new HttpPost(endpoint.resolve("/post"));
@@ -64,11 +61,9 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
 
   @Test
   void shouldLimitPostSizeByContentLength() throws IOException {
-    config.route("/post", ctx -> {
-      Assertions.assertFalse(ctx.getParameter("file", ParameterSource.FORM).isPresent());
-      var response = new HttpResponse("w00t");
-      response.setCode(200);
-      return response;
+    config.route("/post", (req, ctx) -> {
+      Assertions.fail("request should not be processed");
+      return null;
     });
 
     config.getServerConfig().setRequestEntityLimit(DataSize.bytes(0));
@@ -86,10 +81,8 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
 
   @Test
   void shouldShutdownIdleConnections() throws IOException, InterruptedException {
-    config.route("/*", ctx -> {
-      var response = new HttpResponse("w00t");
-      response.setCode(200);
-      return response;
+    config.route("/*", (req, ctx) -> {
+      return new JujubeResponse("w00t");
     });
 
     // we need to set both the timeout, and the select internal since they relate to one another
@@ -111,23 +104,32 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
   @Test
   void shouldPreventFormMasqueradingAsFile() throws IOException {
     final String stringThatLooksLikePath = "/etc/passwd";
-    config.route("/post", ctx -> {
+    config.route("/post", (req, ctx) -> {
       try {
-        var p2 = ctx.getParameter("file", ParameterSource.FORM).orElseThrow();
-        Assertions.assertFalse(p2.isText());
-        var contents = Files.readString( ((FileParameter) p2).asPath());
+        var files = req.getParameters().stream()
+          .filter(p -> p.name().equals("file"))
+          .collect(Collectors.toList());
+        Assertions.assertEquals(2, files.size());
+
+        files.forEach(f -> {
+          Assertions.assertFalse(f.isText());
+        });
+
+        var f1 = (FileParameter) files.get(1);
+
+        var contents = Files.readString(f1.asPath());
         Assertions.assertEquals(stringThatLooksLikePath, contents);
       } catch (Exception e) {
         throw new IllegalStateException(e);
       }
 
-      var response = new HttpResponse("w00t");
-      response.setCode(200);
-      return response;
+      return new JujubeResponse("w00t");
     });
 
     server.start();
 
+    // this is to ensure that we do not treat multiple params with the same name as a single param,
+    // in particular multipart vs form encoded:
     HttpEntity entity = MultipartEntityBuilder
       .create()
       .addBinaryBody("file", new RandomInputStream(42))

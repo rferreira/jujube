@@ -1,4 +1,4 @@
-package org.ophion.jujube.internal;
+package org.ophion.jujube.internal.consumers;
 
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
@@ -13,14 +13,12 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<HttpEntity> {
+class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<HttpEntity> {
   private static final Logger LOG = Loggers.build();
   private MultipartChunkDecoder decoder;
   private ContentType contentType;
@@ -59,25 +57,23 @@ public class MultipartEntityConsumer extends AbstractBinAsyncEntityConsumer<Http
 
   @Override
   protected int capacityIncrement() {
+    //TODO: pull this limit from the underlying decoder|config
     return Integer.MAX_VALUE;
   }
 
   @Override
   protected void data(ByteBuffer src, boolean endOfStream) throws IOException {
-    decoder.decode(src.array(), 0, src.limit(), endOfStream);
+    decoder.decode(src, endOfStream);
+    src.clear();
   }
 
   @Override
   public void releaseResources() {
     LOG.debug("releasing resources");
-    parts.forEach(part -> {
-      if (!part.isText()) {
-        try {
-          Files.deleteIfExists(Paths.get(part.getValue()));
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    });
+    try {
+      decoder.close();
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    }
   }
 }
