@@ -4,21 +4,21 @@ import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpRequest;
 import org.apache.hc.core5.http.message.HttpRequestWrapper;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Extension of Apache's Http Request {@link HttpRequest} to include helper functionality.
  */
 public class JujubeRequest extends HttpRequestWrapper {
-  private Set<Parameter> parameters;
+  private List<Parameter> parameters;
   private SessionStore session;
   private HttpEntity entity;
 
   public JujubeRequest(HttpRequest message, HttpEntity entity, List<Parameter> parameters, SessionStore session) {
     super(message);
-    this.parameters = Set.copyOf(parameters);
+    this.parameters = Collections.unmodifiableList(parameters);
     this.session = session;
     this.entity = entity;
   }
@@ -52,7 +52,7 @@ public class JujubeRequest extends HttpRequestWrapper {
    *
    * @return parameter set.
    */
-  public Set<Parameter> getParameters() {
+  public List<Parameter> getParameters() {
     return parameters;
   }
 

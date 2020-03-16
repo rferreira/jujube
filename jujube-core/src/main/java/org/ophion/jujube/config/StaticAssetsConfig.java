@@ -4,22 +4,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class StaticAssetsConfig {
-  private boolean ifModifiedSinceEnabled;
-  private boolean isEtagEnabled;
+  private boolean ifModifiedSinceEnabled = true;
+  private boolean lastModifiedEnabled = true;
   private Map<String, String> extensionToMimeMapping;
 
   public StaticAssetsConfig() {
-
     extensionToMimeMapping = new HashMap<>();
     extensionToMimeMapping.putAll(MimeMapping.DEFAULT_MAPPING);
   }
 
-  public boolean isEtagEnabled() {
-    return isEtagEnabled;
+  public boolean isLastModifiedEnabled() {
+    return lastModifiedEnabled;
   }
 
-  public void setEtagEnabled(boolean etagEnabled) {
-    isEtagEnabled = etagEnabled;
+  public void setLastModifiedEnabled(boolean lastModifiedEnabled) {
+    this.lastModifiedEnabled = lastModifiedEnabled;
   }
 
   public boolean isIfModifiedSinceEnabled() {

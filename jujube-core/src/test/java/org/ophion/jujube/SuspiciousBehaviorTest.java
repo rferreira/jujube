@@ -115,10 +115,9 @@ public class SuspiciousBehaviorTest extends IntegrationTest {
           Assertions.assertFalse(f.isText());
         });
 
-        var f0 = (FileParameter) files.get(0);
         var f1 = (FileParameter) files.get(1);
 
-        var contents = Files.readString(f0.asPath());
+        var contents = Files.readString(f1.asPath());
         Assertions.assertEquals(stringThatLooksLikePath, contents);
       } catch (Exception e) {
         throw new IllegalStateException(e);

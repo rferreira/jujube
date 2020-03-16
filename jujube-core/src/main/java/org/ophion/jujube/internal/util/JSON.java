@@ -2,10 +2,7 @@ package org.ophion.jujube.internal.util;
 
 import java.beans.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,10 +28,12 @@ public final class JSON {
   }
 
   public static String stringify(Map<Object, Object> contents) {
+    // order items:
+    var orderedView = new TreeMap<>(contents);
+
     StringBuilder buffer = new StringBuilder();
     buffer.append("{");
-
-    Iterator<Map.Entry<Object, Object>> it = contents.entrySet().iterator();
+    Iterator<Map.Entry<Object, Object>> it = orderedView.entrySet().iterator();
     while (it.hasNext()) {
       Map.Entry<Object, Object> pair = it.next();
       buffer.append("\"");
