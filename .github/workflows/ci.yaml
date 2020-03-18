@@ -1,17 +1,32 @@
-name: Run tests
-on: [push]
+name: PR Builds
+on: push
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        java: [ 'openjdk11', 'openjdk13' ]
-    name: Java ${{ matrix.java }} sample
+        os: [ubuntu-latest, windows-latest]
+        jdk: [ 'openjdk11', 'openjdk13' ]
+    name: JDK ${{ matrix.jdk }} on ${{ matrix.os }}.
     steps:
-      - uses: actions/checkout@latest
+      - uses: actions/checkout@v2
       - uses: joschi/setup-jdk@v1
         with:
-          java-version: 'openjdk11'
-          architecture: 'x64'
+          java-version: ${{ matrix.jdk }}
+      - uses: actions/cache@v1
+        if: runner.os != 'Windows'
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - uses: actions/cache@v1
+        if: runner.os == 'Windows'
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**\pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
       - run: mvn clean package

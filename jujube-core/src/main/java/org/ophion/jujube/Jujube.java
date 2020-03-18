@@ -26,7 +26,7 @@ import java.util.concurrent.Future;
 
 /**
  * Just enough logic to turn Apache Http Core into something suited for micro services.
- *
+ * <p>
  * Main server logic, starts and listens for HTTP requests.
  */
 public class Jujube {
@@ -40,6 +40,7 @@ public class Jujube {
 
   /**
    * Starts a new server and then blocks the caller thread forever.
+   *
    * @throws InterruptedException if we're interrupted.
    */
   public void startAndWait() throws InterruptedException {
