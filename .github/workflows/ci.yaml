@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        jdk: [ 'openjdk11', 'openjdk13' ]
+        jdk: [ 'openjdk11', 'openjdk14' ]
     name: JDK ${{ matrix.jdk }} on ${{ matrix.os }}.
     steps:
       - uses: actions/checkout@v2
