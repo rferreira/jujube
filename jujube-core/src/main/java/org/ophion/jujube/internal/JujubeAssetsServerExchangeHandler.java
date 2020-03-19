@@ -10,6 +10,7 @@ import org.apache.hc.core5.http.nio.support.AsyncResponseBuilder;
 import org.apache.hc.core5.http.nio.support.BasicRequestConsumer;
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.ophion.jujube.config.JujubeConfig;
+import org.ophion.jujube.internal.util.Durations;
 import org.ophion.jujube.internal.util.Loggers;
 import org.slf4j.Logger;
 
@@ -19,6 +20,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -32,6 +34,8 @@ import java.util.regex.Pattern;
  * Todo:
  * Support byte ranges.
  * Support etags.
+ * Look into caching last modified date for a minute or so and it should lower CPU usage by ~2.6% under heavy load.
+ * Look into keeping fd's open for a bit of time to lower fileOpen syscall.
  * </p>
  */
 public class JujubeAssetsServerExchangeHandler extends AbstractServerExchangeHandler<Message<HttpRequest, Void>> {
@@ -82,6 +86,7 @@ public class JujubeAssetsServerExchangeHandler extends AbstractServerExchangeHan
 
     try {
       var path = trimSlashes(request.getPath());
+      var startTime = Instant.now();
 
       // if not a GET or HEAD method pop:
       if (!(Method.GET.isSame(request.getMethod()) || Method.HEAD.isSame(request.getMethod()))) {
@@ -94,7 +99,7 @@ public class JujubeAssetsServerExchangeHandler extends AbstractServerExchangeHan
         var file = load(pathTryToLoad);
 
         if (file != null) {
-          LOG.debug("file: {}", file);
+          LOG.trace("file: {}", file);
 
           // ensuring that there're no shenanigans happening:
           if (!file.toPath().startsWith(parentDir)) {
@@ -144,7 +149,7 @@ public class JujubeAssetsServerExchangeHandler extends AbstractServerExchangeHan
               contentType = contentType.withCharset(config.getDefaultCharset());
             }
 
-            LOG.debug("mapping extension: {} to content type: {}", extension, contentType);
+            LOG.trace("mapping extension: {} to content type: {}", extension, contentType);
           }
 
           var responseBuilder = AsyncResponseBuilder.create(HttpStatus.SC_OK);
@@ -162,6 +167,7 @@ public class JujubeAssetsServerExchangeHandler extends AbstractServerExchangeHan
           }
 
           responseTrigger.submitResponse(responseBuilder.build(), context);
+          LOG.debug("processing completed in {}", Durations.humanize(Duration.between(startTime, Instant.now())));
         }
       }
     } catch (URISyntaxException | RuntimeException e) {
@@ -191,7 +197,7 @@ public class JujubeAssetsServerExchangeHandler extends AbstractServerExchangeHan
   }
 
   private File load(String path) throws URISyntaxException {
-    LOG.debug("trying to load:{}", path);
+    LOG.trace("trying to load:{}", path);
     var url = getResource(path);
     if (url == null) {
       return null;
@@ -199,7 +205,6 @@ public class JujubeAssetsServerExchangeHandler extends AbstractServerExchangeHan
     var fd = new File(url.toURI());
     if (fd.isDirectory()) {
       if (indexFile != null) {
-        LOG.debug("path is a directory, looking up index file {}", indexFile);
         fd = new File(getResource(path + "/" + indexFile).toURI());
       } else {
         fd = null;

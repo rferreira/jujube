@@ -4,11 +4,12 @@ import org.ophion.jujube.Jujube;
 import org.ophion.jujube.config.JujubeConfig;
 import org.ophion.jujube.example.resources.ChecksumResource;
 import org.ophion.jujube.example.resources.EchoResource;
-import org.ophion.jujube.response.JujubeResponse;
+import org.ophion.jujube.route.StaticAssetRouteHandler;
 
 public class JujubeHelloWorld {
   public static void main(String[] args) throws InterruptedException {
     var config = new JujubeConfig();
+    config.getServerConfig().disableTls();
 
     var echoResource = new EchoResource();
     config.route("/echo/hello*", echoResource::hello);
@@ -17,9 +18,7 @@ public class JujubeHelloWorld {
     ChecksumResource checksumResource = new ChecksumResource();
     config.route("/checksum/*", checksumResource::post);
     // catch all:
-    config.route("/*", (req, ctx) -> {
-      return new JujubeResponse("Hello world from Jujube!");
-    });
+    config.route("/*", new StaticAssetRouteHandler("/assets/", "index.html"));
 
     Jujube server = new Jujube(config);
     server.startAndWait();

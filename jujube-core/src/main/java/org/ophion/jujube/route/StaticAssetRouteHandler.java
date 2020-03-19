@@ -11,15 +11,11 @@ import java.util.Objects;
  * <p>
  * Based off: https://github.com/dropwizard/dropwizard/blob/master/dropwizard-assets/src/main/java/io/dropwizard/assets/AssetsBundle.java
  */
-public class StaticAssetRouterHandler implements RouteHandler {
+public class StaticAssetRouteHandler implements RouteHandler {
   private final String resourcePathPrefix;
   private final String indexFile;
 
-  public StaticAssetRouterHandler() {
-    this("/", "index.htm");
-  }
-
-  public StaticAssetRouterHandler(String resourcePathPrefix, String indexFile) {
+  public StaticAssetRouteHandler(String resourcePathPrefix, String indexFile) {
     Objects.requireNonNull(indexFile);
     Objects.requireNonNull(resourcePathPrefix);
 

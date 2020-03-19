@@ -10,7 +10,7 @@ import org.ophion.jujube.internal.JujubeAssetsServerExchangeHandler;
 import org.ophion.jujube.internal.JujubeServerExchangeHandler;
 import org.ophion.jujube.internal.util.Durations;
 import org.ophion.jujube.internal.util.Loggers;
-import org.ophion.jujube.route.StaticAssetRouterHandler;
+import org.ophion.jujube.route.StaticAssetRouteHandler;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -25,7 +25,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
- * Just enough logic to turn Apache Http Core into something suited for micro services
+ * Just enough logic to turn Apache Http Core into something suited for micro services.
+ * <p>
+ * Main server logic, starts and listens for HTTP requests.
  */
 public class Jujube {
   private static final Logger LOG = Loggers.build();
@@ -36,11 +38,19 @@ public class Jujube {
     this.config = config;
   }
 
+  /**
+   * Starts a new server and then blocks the caller thread forever.
+   *
+   * @throws InterruptedException if we're interrupted.
+   */
   public void startAndWait() throws InterruptedException {
     this.start();
     instance.awaitShutdown(TimeValue.MAX_VALUE);
   }
 
+  /**
+   * Starts a new server.
+   */
   public void start() {
     Instant startInstant = Instant.now();
 
@@ -70,8 +80,8 @@ public class Jujube {
       config.routes()
         .forEach((path, handler) -> {
           LOG.info("adding route: {} -> {}", path, handler);
-          if (handler instanceof StaticAssetRouterHandler) {
-            var staticHandler = (StaticAssetRouterHandler) handler;
+          if (handler instanceof StaticAssetRouteHandler) {
+            var staticHandler = (StaticAssetRouteHandler) handler;
             bootstrap.register(path, () -> new JujubeAssetsServerExchangeHandler(config, path, staticHandler.getResourcePathPrefix(), staticHandler.getIndexFile()));
           } else {
             bootstrap.register(path, () -> new JujubeServerExchangeHandler(config, handler));
@@ -99,6 +109,9 @@ public class Jujube {
     }
   }
 
+  /**
+   * Stops the running server awaiting in-flight requests to finish.
+   */
   public void stop() {
     var shutdownDelay = config.getServerConfig().getShutDownDelay();
     System.out.println(String.format("> HTTP server is shutting down, awaiting %s for in-flight requests...", Durations.humanize(shutdownDelay)));
