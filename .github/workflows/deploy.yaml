@@ -26,7 +26,10 @@ jobs:
           mvn -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion} versions:commit
 
       - name: Maven deploy
-        run: mvn -B -DskipTests -pl '!jujube-benchmark,!jujube-example' -s .github/workflows/settings.xml -DGITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} deploy
+        env:
+          USERNAME: rferreira
+          GITHUB_TOKEN: {{ secrets.GITHUB_TOKEN }}
+        run: mvn -B -DskipTests -pl '!jujube-benchmark,!jujube-example' -s .github/workflows/settings.xml deploy
 
       - name: Tag release and rev version
         run: |
@@ -36,9 +39,9 @@ jobs:
           echo "################### using version: v$VERSION ###################"
 
           # tag repo
-          git config --global user.email "circleci@uvasoftware.com"
-          git config --global user.name "CircleCI"
-          git tag -a v"${VERSION}" -m "Release by CircleCI v${VERSION}"
+          git config --global user.email "ci@uvasoftware.com"
+          git config --global user.name "CI"
+          git tag -a v"${VERSION}" -m "Release by Github Actions v${VERSION}"
           git push origin v"${VERSION}"
 
           # bumping it to a new snapshot release:
