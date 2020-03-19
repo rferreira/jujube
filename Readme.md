@@ -28,4 +28,4 @@ public class JujubeHelloWorld {
 }
 ```  
 
-Like what you see here? Then consider [saying thanks to the Apache Software Foundation](https://donate.apache.org) or buying [Oleg Kalnichevski](https://github.com/ok2c) a coffee. 
+Like what you see here? Then consider [saying thanks to the Apache Software Foundation](https://donate.apache.org) or buying [Oleg Kalnichevski](https://github.com/ok2c) a beverage. 
