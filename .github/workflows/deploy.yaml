@@ -21,14 +21,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Bump version
+      - name: Prep version
         run:  |
           mvn -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion} versions:commit
 
       - name: Maven deploy
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mvn -B -DskipTests -pl '!jujube-benchmark,!jujube-example' deploy
+        run: mvn -B -DskipTests -pl '!jujube-benchmark,!jujube-example' -s .github/workflows/settings.xml -DGITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} deploy
 
       - name: Tag release and rev version
         run: |
