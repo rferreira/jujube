@@ -26,4 +26,3 @@ hs_err_pid*
 .idea
 *.iml
 .DS_Store
-.github/workflows/settings.xml
