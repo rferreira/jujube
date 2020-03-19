@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.ophion</groupId>
     <artifactId>jujube</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
   </parent>
   <artifactId>jujube-benchmark</artifactId>
   <dependencies>
@@ -33,7 +33,7 @@
     <dependency>
       <groupId>org.ophion</groupId>
       <artifactId>jujube-core</artifactId>
-      <version>0.2.0-SNAPSHOT</version>
+      <version>0.3.0-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
