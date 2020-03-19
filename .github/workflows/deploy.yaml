@@ -28,7 +28,7 @@ jobs:
       - name: Maven deploy
         env:
           USERNAME: rferreira
-          GITHUB_TOKEN: {{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn -B -DskipTests -pl '!jujube-benchmark,!jujube-example' -s .github/workflows/settings.xml deploy
 
       - name: Tag release and rev version
