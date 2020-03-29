@@ -1,7 +1,5 @@
 package org.ophion.jujube.response;
 
-import org.apache.hc.core5.http.HttpResponse;
-
 public class JujubeHttpException extends RuntimeException {
   private final JujubeResponse response;
 
@@ -18,7 +16,7 @@ public class JujubeHttpException extends RuntimeException {
     this.response.setContent(message);
   }
 
-  public HttpResponse toHttpResponse() {
+  public JujubeResponse toHttpResponse() {
     return this.response;
   }
 }

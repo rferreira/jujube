@@ -15,9 +15,13 @@ public class JujubeRequest extends HttpRequestWrapper {
   private List<Parameter> parameters;
   private HttpEntity entity;
 
-  public JujubeRequest(HttpRequest message, HttpEntity entity, List<Parameter> parameters) {
+  public JujubeRequest(HttpRequest message, HttpEntity entity) {
     super(message);
-    this.parameters = Collections.unmodifiableList(parameters);
+    this.entity = entity;
+    parameters = Collections.emptyList();
+  }
+
+  public void setEntity(HttpEntity entity) {
     this.entity = entity;
   }
 
@@ -52,5 +56,9 @@ public class JujubeRequest extends HttpRequestWrapper {
    */
   public List<Parameter> getParameters() {
     return parameters;
+  }
+
+  public void setParameters(List<Parameter> parameters) {
+    this.parameters = parameters;
   }
 }

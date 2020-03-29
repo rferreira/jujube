@@ -1,5 +1,6 @@
 package org.ophion.jujube.response;
 
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.Method;
@@ -17,6 +18,13 @@ public class HttpResponses {
     return new JujubeResponse(message);
   }
 
+  public static JujubeResponse ok(Object content, ContentType contentType) {
+    var response = new JujubeResponse(HttpStatus.SC_OK);
+    response.setContentType(contentType);
+    response.setContent(content);
+    return response;
+  }
+
   public static JujubeResponse noContent() {
     return new JujubeResponse(HttpStatus.SC_NO_CONTENT);
   }
@@ -31,8 +39,13 @@ public class HttpResponses {
     return r;
   }
 
+
   public static JujubeResponse notFound() {
     return new JujubeResponse(HttpStatus.SC_NOT_FOUND);
+  }
+
+  public static JujubeResponse internalServerError() {
+    return new JujubeResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR);
   }
 
   /**

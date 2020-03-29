@@ -1,6 +1,8 @@
 package org.ophion.jujube.example.resources;
 
+import com.fasterxml.jackson.jr.ob.JSON;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Method;
 import org.apache.hc.core5.http.protocol.HttpContext;
@@ -11,8 +13,8 @@ import org.ophion.jujube.request.ParameterSource;
 import org.ophion.jujube.response.ClientError;
 import org.ophion.jujube.response.HttpResponses;
 import org.ophion.jujube.response.JujubeResponse;
+import org.ophion.jujube.util.DataSize;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
@@ -20,6 +22,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -38,9 +42,13 @@ public class ChecksumResource {
         .map(Provider.Service::getAlgorithm)
         .collect(Collectors.joining(","));
 
-      var resp = String.format("Checksum calculating resource, please send us a file, and an optional hash to use. Available hashes: %s",
-        availableHashes);
-      return HttpResponses.ok(resp);
+      return HttpResponses.ok(JSON.std.asString(Map.of(
+        "error", "Checksum calculating resource, please send us a file, and an optional hash to use",
+        "available algorithms", availableHashes,
+        "available arguments", List.of("file - required", "hash - optional"),
+        "required encoding", ContentType.MULTIPART_FORM_DATA.getMimeType())
+        ), ContentType.APPLICATION_JSON
+      );
     }
 
     var file = (FileParameter) req.getParameter("file", ParameterSource.FORM)
@@ -57,14 +65,14 @@ public class ChecksumResource {
     } catch (NoSuchAlgorithmException ex) {
       return HttpResponses.badRequest(String.format("error: %s \n", ex.getMessage()));
     }
-    try (var ins = new BufferedInputStream(Files.newInputStream(file.asPath()))) {
-      while (ins.available() > 0) {
-        digest.update((byte) ins.read());
-      }
-    }
+    DigestUtils.digest(digest, file.asPath().toFile());
 
     var checksum = Hex.encodeHexString(digest.digest());
-    return HttpResponses.ok(String.format("checksum:%s \n", checksum));
+    return new JujubeResponse(200, JSON.std.asString(Map.of(
+      "algorithm", digest.getAlgorithm(),
+      "checksum:", checksum,
+      "size", DataSize.bytes(Files.size(file.asPath())).toString()
+    )), ContentType.APPLICATION_JSON);
 
 
   }

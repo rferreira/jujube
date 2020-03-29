@@ -21,15 +21,16 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ContentAwareRequestConsumer extends BasicRequestConsumer<HttpEntity> {
   private static final Logger LOG = Loggers.build();
-  private final AtomicReference<Exception> exceptionHolder;
+  private final AtomicReference<Throwable> exceptionHolder;
   private JujubeConfig config;
   private long bytesProcessed = 0;
   private boolean isDiscarding = false;
 
   @SuppressWarnings("unchecked")
-  public ContentAwareRequestConsumer(JujubeConfig config, EntityDetails details, AtomicReference<Exception> exceptionRef) {
+  public ContentAwareRequestConsumer(JujubeConfig config, EntityDetails details, AtomicReference<Throwable> exceptionRef) {
     super(() -> {
-      if (details != null) {
+      // if we don't have a body and if there was already an exception thrown, we don't waste time parsing the entity:
+      if (details != null && exceptionRef.get() == null) {
         boolean isContentGreaterThanLimit = details.getContentLength() > config.getServerConfig().getRequestEntityLimit().toBytes();
 
         if (!isContentGreaterThanLimit && details.getContentType() != null) {
@@ -64,7 +65,6 @@ public class ContentAwareRequestConsumer extends BasicRequestConsumer<HttpEntity
     bytesProcessed += src.limit();
     super.consume(src);
 
-    LOG.debug("consumed {}", bytesProcessed);
     var limit = config.getServerConfig().getRequestEntityLimit();
 
     if (bytesProcessed > limit.toBytes()) {

@@ -1,5 +1,6 @@
 package org.ophion.jujube.config;
 
+import org.ophion.jujube.middleware.Middleware;
 import org.ophion.jujube.request.FormParameterExtractor;
 import org.ophion.jujube.request.MultipartParameterExtractor;
 import org.ophion.jujube.request.ParameterExtractor;
@@ -11,9 +12,8 @@ import org.ophion.jujube.routing.RoutePatterns;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.regex.Pattern;
@@ -24,19 +24,21 @@ public class JujubeConfig {
   private final StaticAssetsConfig staticAssetsConfig;
   private ExecutorService executorService;
   private Charset defaultCharset;
-  private List<ParameterExtractor> parameterExtractors;
+  private List<ParameterExtractor> parameterExtractorRegistry;
+  private List<Middleware> middlewareRegistry;
 
   public JujubeConfig() {
-    this.routes = new LinkedList<>();
+    this.routes = new ArrayList<>();
+    this.middlewareRegistry = new ArrayList<>();
     this.executorService = ForkJoinPool.commonPool();
     this.serverConfig = new ServerConfig();
     this.staticAssetsConfig = new StaticAssetsConfig();
     this.defaultCharset = StandardCharsets.UTF_8;
 
-    parameterExtractors = new CopyOnWriteArrayList<>();
-    parameterExtractors.add(new PathParameterExtractor());
-    parameterExtractors.add(new MultipartParameterExtractor());
-    parameterExtractors.add(new FormParameterExtractor());
+    parameterExtractorRegistry = new ArrayList<>();
+    parameterExtractorRegistry.add(new PathParameterExtractor());
+    parameterExtractorRegistry.add(new MultipartParameterExtractor());
+    parameterExtractorRegistry.add(new FormParameterExtractor());
   }
 
   public ExecutorService getExecutorService() {
@@ -67,12 +69,20 @@ public class JujubeConfig {
     routes.addAll(group.getRouteGroup());
   }
 
+  public void addMiddleware(Middleware middleware) {
+    this.middlewareRegistry.add(middleware);
+  }
+
+  public List<Middleware> getMiddlewareRegistry() {
+    return middlewareRegistry;
+  }
+
   public List<Route> routes() {
     return routes;
   }
 
-  public List<ParameterExtractor> getParameterExtractors() {
-    return parameterExtractors;
+  public List<ParameterExtractor> getParameterExtractorRegistry() {
+    return parameterExtractorRegistry;
   }
 
   public Charset getDefaultCharset() {
