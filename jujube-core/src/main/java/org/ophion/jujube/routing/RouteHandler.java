@@ -1,4 +1,4 @@
-package org.ophion.jujube.route;
+package org.ophion.jujube.routing;
 
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.ophion.jujube.request.JujubeRequest;

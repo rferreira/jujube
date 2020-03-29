@@ -11,18 +11,19 @@ import org.apache.hc.core5.http.protocol.HttpContext;
 import org.ophion.jujube.config.JujubeConfig;
 import org.ophion.jujube.internal.consumers.ContentAwareRequestConsumer;
 import org.ophion.jujube.internal.consumers.RequestEntityLimitExceeded;
-import org.ophion.jujube.internal.parameters.ParameterExtractor;
 import org.ophion.jujube.internal.util.Loggers;
 import org.ophion.jujube.request.JujubeRequest;
-import org.ophion.jujube.request.SessionStore;
+import org.ophion.jujube.request.Parameter;
 import org.ophion.jujube.response.JujubeHttpException;
 import org.ophion.jujube.response.JujubeResponse;
 import org.ophion.jujube.response.ResponseRequestTooLarge;
 import org.ophion.jujube.response.ResponseServerError;
-import org.ophion.jujube.route.RouteHandler;
+import org.ophion.jujube.routing.Route;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,16 +34,14 @@ import java.util.concurrent.atomic.AtomicReference;
 public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<Message<HttpRequest, HttpEntity>> {
   private static final Logger LOG = Loggers.build();
   private final JujubeConfig config;
-  private final RouteHandler handler;
-  private final ParameterExtractor parameterExtractor;
   private final ExecutorService executor;
+  private final Route route;
   private AtomicReference<Exception> exceptionRef;
 
-  public JujubeServerExchangeHandler(JujubeConfig config, RouteHandler handler) {
+  public JujubeServerExchangeHandler(JujubeConfig config, Route route) {
     this.config = config;
-    this.handler = handler;
+    this.route = route;
     this.exceptionRef = new AtomicReference<>();
-    this.parameterExtractor = new ParameterExtractor();
     this.executor = config.getExecutorService();
   }
 
@@ -76,12 +75,20 @@ public class JujubeServerExchangeHandler extends AbstractServerExchangeHandler<M
             // hydrating request:
             var entity = requestMessage.getBody();
             var parentRequest = requestMessage.getHead();
-            var params = parameterExtractor.extract(parentRequest, entity);
-            var req = new JujubeRequest(parentRequest, entity, params, new SessionStore() {
+            context.setAttribute("jujube.route", route);
+
+            // constraints
+            List<Parameter> parameters = new ArrayList<>();
+
+            // extracting parameters:
+            config.getParameterExtractors().forEach(pe -> {
+              parameters.addAll(pe.extract(parentRequest, entity, context));
             });
 
+            var req = new JujubeRequest(parentRequest, entity, parameters);
+
             // dispatching
-            return handler.handle(req, context);
+            return route.getHandler().handle(req, context);
 
             // blocking and awaiting response:
           }).get();

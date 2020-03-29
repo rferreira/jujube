@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.ophion.jujube.http.ContentTypes;
 import org.ophion.jujube.internal.util.Loggers;
-import org.ophion.jujube.route.StaticAssetRouteHandler;
+import org.ophion.jujube.routing.StaticAssetRouteHandler;
 import org.slf4j.Logger;
 
 import javax.net.ssl.SSLContext;
@@ -44,7 +44,7 @@ public class JujubeStaticAssetTest extends IntegrationTest {
 
   @Test
   void shouldHandleStaticAssetsFromClasspath() throws IOException {
-    config.route("/static/*", new StaticAssetRouteHandler("/assets/", "index.html"));
+    config.route(new StaticAssetRouteHandler("/static/", "/assets/", "index.html"));
     server.start();
     var contents = client.execute(new HttpGet(endpoint.resolve("/static/hello.txt")), response -> {
       Assertions.assertEquals(200, response.getCode());
@@ -56,7 +56,7 @@ public class JujubeStaticAssetTest extends IntegrationTest {
 
   @Test
   void shouldHandleStaticFromSubDirectories() throws IOException {
-    config.route("/static/*", new StaticAssetRouteHandler("/assets/", "index.html"));
+    config.route(new StaticAssetRouteHandler("/static/", "/assets/", "index.html"));
     server.start();
     var contents = client.execute(new HttpGet(endpoint.resolve("/static/dir1/foo.js")), response -> {
       Assertions.assertEquals(200, response.getCode());
@@ -68,7 +68,7 @@ public class JujubeStaticAssetTest extends IntegrationTest {
 
   @Test
   void shouldNotAllowRelativePath() throws IOException {
-    config.route("/static/*", new StaticAssetRouteHandler("/assets/", "index.html"));
+    config.route(new StaticAssetRouteHandler("/static/", "/assets/", "index.html"));
     server.start();
     var code = client.execute(new HttpGet(endpoint.resolve("/static/../assets-not-reachable.xml")), HttpResponse::getCode);
     Assertions.assertEquals(404, code);
@@ -76,7 +76,7 @@ public class JujubeStaticAssetTest extends IntegrationTest {
 
   @Test
   void should415OnInvalidMethods() throws IOException {
-    config.route("/static/*", new StaticAssetRouteHandler("/assets/", "index.html"));
+    config.route(new StaticAssetRouteHandler("/static/", "/assets/", "index.html"));
     server.start();
     var code = client.execute(new HttpPost(endpoint.resolve("/static/hello.txt")), HttpResponse::getCode);
     Assertions.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, code);
@@ -84,7 +84,7 @@ public class JujubeStaticAssetTest extends IntegrationTest {
 
   @Test
   void shouldLoadIndexFile() throws IOException {
-    config.route("/static/*", new StaticAssetRouteHandler("/assets/", "index.html"));
+    config.route(new StaticAssetRouteHandler("/static/", "/assets/", "index.html"));
     server.start();
     var contents = client.execute(new HttpGet(endpoint.resolve("/static/")), response -> {
       Assertions.assertEquals(200, response.getCode());
@@ -96,7 +96,7 @@ public class JujubeStaticAssetTest extends IntegrationTest {
 
   @Test
   void shouldIncludeLastModifiedHeader() throws IOException {
-    config.route("/static/*", new StaticAssetRouteHandler("/assets/", "index.html"));
+    config.route(new StaticAssetRouteHandler("/static/", "/assets/", "index.html"));
     server.start();
     var lastModifiedAsString = client.execute(new HttpHead(endpoint.resolve("/static/")), response -> response.getHeader(HttpHeaders.LAST_MODIFIED).getValue());
     var instant = DateTimeFormatter.RFC_1123_DATE_TIME.parse(lastModifiedAsString);
@@ -105,7 +105,7 @@ public class JujubeStaticAssetTest extends IntegrationTest {
 
   @Test
   void shouldSupportIfModifiedSince() throws IOException {
-    config.route("/static/*", new StaticAssetRouteHandler("/assets/", "index.html"));
+    config.route(new StaticAssetRouteHandler("/static/", "/assets/", "index.html"));
     server.start();
 
     // getting last modification date:
@@ -126,7 +126,7 @@ public class JujubeStaticAssetTest extends IntegrationTest {
 
   @Test
   void shouldSupportIfUnModifiedSince() throws IOException {
-    config.route("/static/*", new StaticAssetRouteHandler("/assets/", "index.html"));
+    config.route(new StaticAssetRouteHandler("/static/", "/assets/", "index.html"));
     server.start();
 
     // getting last modification date:
@@ -186,6 +186,10 @@ public class JujubeStaticAssetTest extends IntegrationTest {
           for (int i = 0; i < requestsPerThread; i++) {
             LOG.info("thread {} request {}", t + 1, i + 1);
             var contents = customClient.execute(new HttpGet(endpoint.resolve("/static/index.html")), response -> {
+              LOG.info("response {}", response.getCode());
+              if (response.getCode() != HttpStatus.SC_OK) {
+                System.exit(2);
+              }
               Assertions.assertEquals(200, response.getCode());
               Assertions.assertEquals(ContentType.TEXT_HTML.withCharset(config.getDefaultCharset()).toString(), response.getEntity().getContentType());
               return EntityUtils.toString(response.getEntity());
@@ -199,7 +203,7 @@ public class JujubeStaticAssetTest extends IntegrationTest {
     });
 
     // starting server
-    config.route("/static/*", new StaticAssetRouteHandler("/assets/", "index.html"));
+    config.route(new StaticAssetRouteHandler("/static/", "/assets/", "index.html"));
     server.start();
 
     // starting test:

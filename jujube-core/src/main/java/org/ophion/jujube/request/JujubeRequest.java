@@ -13,13 +13,11 @@ import java.util.Optional;
  */
 public class JujubeRequest extends HttpRequestWrapper {
   private List<Parameter> parameters;
-  private SessionStore session;
   private HttpEntity entity;
 
-  public JujubeRequest(HttpRequest message, HttpEntity entity, List<Parameter> parameters, SessionStore session) {
+  public JujubeRequest(HttpRequest message, HttpEntity entity, List<Parameter> parameters) {
     super(message);
     this.parameters = Collections.unmodifiableList(parameters);
-    this.session = session;
     this.entity = entity;
   }
 
@@ -54,9 +52,5 @@ public class JujubeRequest extends HttpRequestWrapper {
    */
   public List<Parameter> getParameters() {
     return parameters;
-  }
-
-  public SessionStore getSession() {
-    return this.session;
   }
 }

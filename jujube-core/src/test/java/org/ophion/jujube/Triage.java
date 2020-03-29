@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.ophion.jujube.config.JujubeConfig;
 import org.ophion.jujube.internal.JujubeServerExchangeHandler;
 import org.ophion.jujube.response.JujubeResponse;
+import org.ophion.jujube.routing.Route;
 import org.ophion.jujube.util.DataSize;
 import org.ophion.jujube.util.RandomInputStream;
 
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.regex.Pattern;
 
 @Disabled
 public class Triage {
@@ -63,9 +65,8 @@ public class Triage {
     config.getServerConfig().setRequestEntityLimit(DataSize.megabytes(2));
 
     final HttpAsyncServer server = H2ServerBootstrap.bootstrap()
-      .register("*", () -> new JujubeServerExchangeHandler(config, (req, ctx) -> {
-        return new JujubeResponse();
-      }))
+      .register(".*", () -> new JujubeServerExchangeHandler(config, new Route(Pattern.compile(".*"),
+        (req, ctx) -> new JujubeResponse())))
       .setExceptionCallback(Throwable::printStackTrace)
       .create();
 
