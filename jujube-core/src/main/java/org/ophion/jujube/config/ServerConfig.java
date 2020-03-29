@@ -4,7 +4,6 @@ import org.apache.hc.core5.function.Callback;
 import org.apache.hc.core5.function.Supplier;
 import org.apache.hc.core5.http.config.Http1Config;
 import org.apache.hc.core5.http.impl.Http1StreamListener;
-import org.apache.hc.core5.http.impl.HttpProcessors;
 import org.apache.hc.core5.http.nio.AsyncServerExchangeHandler;
 import org.apache.hc.core5.http.nio.ssl.BasicServerTlsStrategy;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
@@ -13,6 +12,7 @@ import org.apache.hc.core5.http.protocol.LookupRegistry;
 import org.apache.hc.core5.http.protocol.UriRegexMatcher;
 import org.apache.hc.core5.http2.HttpVersionPolicy;
 import org.apache.hc.core5.http2.config.H2Config;
+import org.apache.hc.core5.http2.impl.H2Processors;
 import org.apache.hc.core5.http2.impl.nio.H2StreamListener;
 import org.apache.hc.core5.http2.ssl.H2ServerTlsStrategy;
 import org.apache.hc.core5.reactor.IOReactorConfig;
@@ -58,7 +58,7 @@ public class ServerConfig {
     this.handshakeTimeout = Timeout.of(30, TimeUnit.SECONDS);
     this.listenPort = 8080;
     this.exceptionCallback = new JujubeExceptionCallback();
-    this.httpProcessor = HttpProcessors.server("jujube");
+    this.httpProcessor = H2Processors.server("jujube");
     // default to regex based routing:
     this.lookupRegistry = new UriRegexMatcher<>();
 
