@@ -4,11 +4,13 @@ import org.apache.hc.core5.function.Callback;
 import org.apache.hc.core5.function.Supplier;
 import org.apache.hc.core5.http.config.Http1Config;
 import org.apache.hc.core5.http.impl.Http1StreamListener;
+import org.apache.hc.core5.http.impl.HttpProcessors;
 import org.apache.hc.core5.http.nio.AsyncServerExchangeHandler;
 import org.apache.hc.core5.http.nio.ssl.BasicServerTlsStrategy;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
+import org.apache.hc.core5.http.protocol.HttpProcessor;
 import org.apache.hc.core5.http.protocol.LookupRegistry;
-import org.apache.hc.core5.http.protocol.UriPatternOrderedMatcher;
+import org.apache.hc.core5.http.protocol.UriRegexMatcher;
 import org.apache.hc.core5.http2.HttpVersionPolicy;
 import org.apache.hc.core5.http2.config.H2Config;
 import org.apache.hc.core5.http2.impl.nio.H2StreamListener;
@@ -44,7 +46,8 @@ public class ServerConfig {
   private Http1Config http1Config = Http1Config.DEFAULT;
   private H2StreamListener h2StreamListener;
   private Http1StreamListener http1StreamListener;
-  private Duration shutDownDelay = Duration.ofMillis(100);
+  private Duration shutDownDelay = Duration.ofSeconds(30);
+  private HttpProcessor httpProcessor;
 
   public ServerConfig() {
     this.ioReactorConfig = IOReactorConfig.custom()
@@ -53,9 +56,11 @@ public class ServerConfig {
       .build();
 
     this.handshakeTimeout = Timeout.of(30, TimeUnit.SECONDS);
-    this.lookupRegistry = new UriPatternOrderedMatcher<>();
     this.listenPort = 8080;
     this.exceptionCallback = new JujubeExceptionCallback();
+    this.httpProcessor = HttpProcessors.server("jujube");
+    // default to regex based routing:
+    this.lookupRegistry = new UriRegexMatcher<>();
 
     try {
       var certificate = new SelfSignedCertificate("jujube.local");
@@ -190,5 +195,13 @@ public class ServerConfig {
 
   public void setShutDownDelay(Duration shutDownDelay) {
     this.shutDownDelay = shutDownDelay;
+  }
+
+  public HttpProcessor getHttpProcessor() {
+    return httpProcessor;
+  }
+
+  public void setHttpProcessor(HttpProcessor httpProcessor) {
+    this.httpProcessor = httpProcessor;
   }
 }

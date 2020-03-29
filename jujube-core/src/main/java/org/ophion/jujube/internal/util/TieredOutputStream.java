@@ -29,6 +29,7 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
   private static final Logger LOG = Loggers.build();
   private static final DataSize DEFAULT_BUFFER_SIZE = DataSize.kibibytes(64);
   private final DataSize memoryLimit;
+  private final Supplier<Path> tempFileSupplier;
   private boolean isWritingToFile = false;
   private long size;
   private FileChannel channel;
@@ -57,16 +58,12 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
     this.buffer = ByteBuffer.allocate((int) memoryLimit.toBytes());
     this.limit = totalLimit;
     this.memoryLimit = memoryLimit;
+    this.tempFileSupplier = tempFileSupplier;
 
     if (totalLimit.compareTo(memoryLimit) < 0) {
       throw new IllegalArgumentException("total limit cannot be smaller than memory limit");
     }
-    this.fd = tempFileSupplier.get();
-    try {
-      this.channel = FileChannel.open(fd, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
+
   }
 
   @Override
@@ -189,9 +186,13 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
       return;
     }
     isClosed = true;
-    LOG.debug("deleting {}", fd);
-    channel.close();
-    Files.deleteIfExists(fd);
+    // we don't close the byte buffer because it would force is to add an in-loop check to see if
+    // we were closed before writing and that would be expensive
+    if (fd != null) {
+      LOG.debug("deleting {}", fd);
+      channel.close();
+      Files.deleteIfExists(fd);
+    }
   }
 
   public boolean isForceSyncWithEveryFlushEnabled() {
@@ -203,6 +204,17 @@ public class TieredOutputStream extends OutputStream implements AutoCloseable {
   }
 
   private void writeBufferToChannel() throws IOException {
+    if (channel == null) {
+      // we lazily create the temp file to we don't penalize content that could fit in memory
+      // with an extra syscall to create the file:
+      this.fd = tempFileSupplier.get();
+      try {
+        this.channel = FileChannel.open(fd, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
+      }
+    }
+
     channel.write(buffer);
     if (forceSyncWithEveryFlushEnabled) {
       LOG.debug("performing fsync");

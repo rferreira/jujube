@@ -12,6 +12,7 @@ import org.apache.hc.core5.http.protocol.HttpContext;
 import org.ophion.jujube.config.JujubeConfig;
 import org.ophion.jujube.internal.util.Durations;
 import org.ophion.jujube.internal.util.Loggers;
+import org.ophion.jujube.routing.StaticAssetRouteHandler;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -44,20 +45,14 @@ public class JujubeAssetsServerExchangeHandler extends AbstractServerExchangeHan
   private final JujubeConfig config;
   private final String resourcePathPrefix;
   private final String indexFile;
-  private final String externalBasePath;
+  private final String uriPathPrefix;
   private final Path parentDir;
 
-  public JujubeAssetsServerExchangeHandler(JujubeConfig config, String path, String resourcePathPrefix, String indexFile) {
+  public JujubeAssetsServerExchangeHandler(JujubeConfig config, StaticAssetRouteHandler staticHandler) {
     this.config = config;
-    this.resourcePathPrefix = trimSlashes(resourcePathPrefix);
-    this.indexFile = trimSlashes(indexFile);
-
-    // sanitizing path:
-    var splatIndex = path.indexOf("*");
-    if (splatIndex > 0) {
-      path = path.substring(0, splatIndex);
-    }
-    this.externalBasePath = trimSlashes(path);
+    this.resourcePathPrefix = trimSlashes(staticHandler.getResourcePathPrefix());
+    this.indexFile = trimSlashes(staticHandler.getIndexFile());
+    this.uriPathPrefix = trimSlashes(staticHandler.getUriPathPrefix());
 
     try {
       this.parentDir = Paths.get(getResource(this.resourcePathPrefix).toURI());
@@ -94,8 +89,8 @@ public class JujubeAssetsServerExchangeHandler extends AbstractServerExchangeHan
         return;
       }
 
-      if (path != null && path.length() >= externalBasePath.length()) {
-        var pathTryToLoad = resourcePathPrefix + "/" + trimSlashes(path.substring(externalBasePath.length()));
+      if (path != null && path.length() >= uriPathPrefix.length()) {
+        var pathTryToLoad = resourcePathPrefix + "/" + trimSlashes(path.substring(uriPathPrefix.length()));
         var file = load(pathTryToLoad);
 
         if (file != null) {

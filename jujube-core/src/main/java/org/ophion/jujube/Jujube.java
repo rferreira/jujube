@@ -10,7 +10,7 @@ import org.ophion.jujube.internal.JujubeAssetsServerExchangeHandler;
 import org.ophion.jujube.internal.JujubeServerExchangeHandler;
 import org.ophion.jujube.internal.util.Durations;
 import org.ophion.jujube.internal.util.Loggers;
-import org.ophion.jujube.route.StaticAssetRouteHandler;
+import org.ophion.jujube.routing.StaticAssetRouteHandler;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -67,6 +67,7 @@ public class Jujube {
         .setExceptionCallback(config.getServerConfig().getExceptionCallback())
         .setLookupRegistry(config.getServerConfig().getLookupRegistry())
         .setCanonicalHostName(config.getServerConfig().getCanonicalHostName())
+        .setHttpProcessor(config.getServerConfig().getHttpProcessor())
         .setVersionPolicy(config.getServerConfig().getVersionPolicy());
 
       if (config.getServerConfig().getH2StreamListener() != null) {
@@ -78,13 +79,13 @@ public class Jujube {
       }
 
       config.routes()
-        .forEach((path, handler) -> {
-          LOG.info("adding route: {} -> {}", path, handler);
-          if (handler instanceof StaticAssetRouteHandler) {
-            var staticHandler = (StaticAssetRouteHandler) handler;
-            bootstrap.register(path, () -> new JujubeAssetsServerExchangeHandler(config, path, staticHandler.getResourcePathPrefix(), staticHandler.getIndexFile()));
+        .forEach(route -> {
+          LOG.info("adding route: {} ", route);
+          if (route.getHandler() instanceof StaticAssetRouteHandler) {
+            var staticHandler = (StaticAssetRouteHandler) route.getHandler();
+            bootstrap.register(route.getPattern().pattern(), () -> new JujubeAssetsServerExchangeHandler(config, staticHandler));
           } else {
-            bootstrap.register(path, () -> new JujubeServerExchangeHandler(config, handler));
+            bootstrap.register(route.getPattern().pattern(), () -> new JujubeServerExchangeHandler(config, route));
           }
         });
 
